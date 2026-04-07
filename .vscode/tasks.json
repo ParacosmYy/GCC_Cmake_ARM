@@ -1,0 +1,110 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "just: build",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "build"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build"
+        },
+        {
+            "label": "just: build-release",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "build-release"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "just: flash",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "flash"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "just: deploy",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "deploy"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "just: format",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "format"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "just: check",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "check"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "just: clean",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "clean"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "just: rebuild",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "rebuild"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
+    ]
+}

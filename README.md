@@ -2,6 +2,8 @@
 
 基于 GCC ARM 工具链和 CMake 构建系统的 STM32H743XIH6 项目模板，支持 CMSIS-DAP 烧录器调试。
 
+> 团队统一入口建议直接使用 `Justfile` 和 VS Code 任务；PowerShell 里如果已配置 profile，也可以直接执行 `just`。
+
 ---
 
 ## 硬件信息
@@ -111,19 +113,12 @@ just rebuild
 
 ### 调试
 
-```bash
-# 启动 OpenOCD 服务器
-& 'D:\DevEnv\openocd\bin\openocd.exe' `
-    -f 'D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg' `
-    -f 'D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg'
+1. 在 VS Code 里安装 `Cortex-Debug` 扩展（如果还没装）。
+2. 先执行 `just build`，或者直接按 `F5`，调试配置会自动先构建 Debug。
+3. 选择 `Debug STM32H743 (OpenOCD)`，然后按 `F5` 启动。
+4. 调试器会自动用 OpenOCD 连接 CMSIS-DAP，加载 `build/Debug/TEST_VSCODE_LPUART1_2.elf`，并停在 `main`。
 
-# 在另一个终端启动 GDB
-arm-none-eabi-gdb build/Debug/TEST_VSCODE_LPUART1_2.elf
-(gdb) target remote localhost:3333
-(gdb) monitor reset halt
-(gdb) load
-(gdb) continue
-```
+如果你只是想单独烧录，不进调试，就执行 `just flash`。
 
 ---
 

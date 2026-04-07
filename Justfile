@@ -1,5 +1,8 @@
 set shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 
+# 这个 Justfile 只负责统一入口，不重写 CMake / OpenOCD 逻辑。
+# 团队日常直接使用 build、flash、deploy、format、check、clean、rebuild。
+
 cmake := 'C:/Program Files/CMake/bin/cmake.exe'
 clang_format := 'D:/DevEnv/llvm/bin/clang-format.exe'
 cppcheck := 'D:/DevEnv/cppcheck/cppcheck.exe'
@@ -15,9 +18,11 @@ debug_elf := 'build/Debug/TEST_VSCODE_LPUART1_2.elf'
 
 build: # 编译 Debug
     @& '{{cmake}}' --preset {{debug_preset}}
+    @& '{{cmake}}' --build --preset {{debug_preset}}
 
 build-release: # 编译 Release
     @& '{{cmake}}' --preset {{release_preset}}
+    @& '{{cmake}}' --build --preset {{release_preset}}
 
 flash: # 烧录 Debug 固件
     @& '{{openocd}}' -f '{{cmsis_dap_cfg}}' -f '{{stm32h7x_cfg}}' -c "program {{debug_elf}} verify reset exit"

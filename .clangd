@@ -19,3 +19,5 @@ Diagnostics:
     - pp_unknown_header
     - drv_int_to_short_cast
     - unknown_typename
+    - err_undeclared_var_use
+    - err_undeclared_var_use_suggest
