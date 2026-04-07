@@ -1,0 +1,17 @@
+{
+    "editor.formatOnSave": true,
+    "clangd.path": "D:/DevEnv/llvm/bin/clangd.exe",
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build/Debug",
+        "--background-index",
+        "--query-driver=D:/DevEnv/GNU-tools-for-STM32/bin/arm-none-eabi-*.exe"
+    ],
+    "[c]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    "[cpp]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    }
+}

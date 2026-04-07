@@ -6,15 +6,15 @@
 
 ## 硬件信息
 
-| 项目 | 规格 |
-|------|------|
-| **芯片型号** | STM32H743XIH6 |
-| **封装** | TFBGA240 |
-| **内核** | ARM Cortex-M7 (480MHz) |
-| **Flash** | 2 MB |
-| **RAM** | 1 MB (含 864KB AXI-SRAM + 128KB SRAM1/2/3 + 64KB ITCM/DTCM) |
-| **烧录器** | CMSIS-DAP / DAPLink 兼容调试器 |
-| **调试接口** | SWD (Serial Wire Debug) |
+| 项目         | 规格                                                        |
+| ------------ | ----------------------------------------------------------- |
+| **芯片型号** | STM32H743XIH6                                               |
+| **封装**     | TFBGA240                                                    |
+| **内核**     | ARM Cortex-M7 (480MHz)                                      |
+| **Flash**    | 2 MB                                                        |
+| **RAM**      | 1 MB (含 864KB AXI-SRAM + 128KB SRAM1/2/3 + 64KB ITCM/DTCM) |
+| **烧录器**   | CMSIS-DAP / DAPLink 兼容调试器                              |
+| **调试接口** | SWD (Serial Wire Debug)                                     |
 
 ---
 
@@ -23,7 +23,7 @@
 - **RTOS**: FreeRTOS (CMSIS-RTOS v2 封装)
 - **通信**: LPUART1 (低功耗串口)
 - **DMA**: BDMA (备份 DMA) 支持收发双通道
-- **构建系统**: CMake + Ninja
+- **构建系统**: CMake + Ninja + Just
 - **标准**: C11
 
 ---
@@ -64,38 +64,58 @@
    cd D:\DevEnv
    .\install_env.ps1
    ```
-2. 重启终端使环境变量生效
+2. 安装 `Just`、`OpenOCD` 和 `clang-format` / `cppcheck`
+3. 重启终端使环境变量生效
 
-### 构建项目
+### 统一工作流
 
 ```bash
 cd <项目目录>
 
-# 配置 (Debug 模式)
-cmake --preset Debug
+# 如果 `just` 没有加入 PATH，可以直接用绝对路径
+& 'D:\DevEnv\just\just.exe' --list
 
-# 构建
-cmake --build build/Debug
+# 编译 Debug
+just build
 
-# 生成 hex/bin (可选)
-arm-none-eabi-objcopy -O ihex build/Debug/TEST_VSCODE_LPUART1_2.elf build/Debug/TEST_VSCODE_LPUART1_2.hex
+# 编译 Release
+just build-release
+
+# 烧录 Debug 固件
+just flash
+
+# 编译并烧录 Debug
+just deploy
+
+# 格式化 C/C++ 源码
+just format
+
+# 格式检查 + 静态分析
+just check
+
+# 清理构建产物
+just clean
+
+# 完整重建 Debug
+just rebuild
 ```
 
-### 烧录程序
+### 直接使用 OpenOCD
 
 ```bash
-# 使用 OpenOCD + CMSIS-DAP 烧录
-openocd -f D:\DevEnv\stm32h7_cmsis_dap.cfg -c "program build/Debug/TEST_VSCODE_LPUART1_2.elf verify reset exit"
-
-# 或使用 hex 文件
-openocd -f D:\DevEnv\stm32h7_cmsis_dap.cfg -c "program build/Debug/TEST_VSCODE_LPUART1_2.hex verify reset exit"
+& 'D:\DevEnv\openocd\bin\openocd.exe' `
+    -f 'D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg' `
+    -f 'D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg' `
+    -c "program build/Debug/TEST_VSCODE_LPUART1_2.elf verify reset exit"
 ```
 
 ### 调试
 
 ```bash
 # 启动 OpenOCD 服务器
-openocd -f D:\DevEnv\stm32h7_cmsis_dap.cfg
+& 'D:\DevEnv\openocd\bin\openocd.exe' `
+    -f 'D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg' `
+    -f 'D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg'
 
 # 在另一个终端启动 GDB
 arm-none-eabi-gdb build/Debug/TEST_VSCODE_LPUART1_2.elf
@@ -147,21 +167,21 @@ add_definitions(-DSTM32H743xx)  # 改为对应型号，如 STM32H750xx
 
 根据使用的调试器选择对应配置文件：
 
-| 烧录器类型 | 配置文件 | 适用场景 |
-|-----------|----------|---------|
-| CMSIS-DAP | `stm32h7_cmsis_dap.cfg` | DAPLink、HS-Link、WCH-Link 等 |
-| J-Link | `stm32h7_jlink.cfg` | Segger J-Link / J-Link OB |
-| ST-Link | `stm32h7_stlink.cfg` | ST-Link V2/V3 |
+| 烧录器类型 | 配置文件             | 适用场景                      |
+| ---------- | -------------------- | ----------------------------- |
+| CMSIS-DAP  | `cmsis-dap.cfg`      | DAPLink、HS-Link、WCH-Link 等 |
+| J-Link     | `stm32h7_jlink.cfg`  | Segger J-Link / J-Link OB     |
+| ST-Link    | `stm32h7_stlink.cfg` | ST-Link V2/V3                 |
 
-在 `GCC_Toolchain` 分支中获取对应配置文件。
+当前项目默认使用 `D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg` 和 `D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg`。
 
 ---
 
 ## 引脚配置
 
-| 功能 | 引脚 | 模式 |
-|------|------|------|
-| LPUART1_TX | PA9 | 复用推挽 |
+| 功能       | 引脚 | 模式     |
+| ---------- | ---- | -------- |
+| LPUART1_TX | PA9  | 复用推挽 |
 | LPUART1_RX | PA10 | 复用输入 |
 
 ---
