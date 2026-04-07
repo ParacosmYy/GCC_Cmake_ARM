@@ -2,8 +2,7 @@
 
 基于 GCC ARM 工具链和 CMake 构建系统的 STM32H743XIH6 项目模板，支持 CMSIS-DAP 烧录器调试。
 
-> 团队统一入口建议直接使用 `Justfile` 和 VS Code 任务；PowerShell 里如果已配置 profile，也可以直接执行 `just`。
----
+> 团队统一入口建议直接使用 `Justfile` 和 VS Code 任务；PowerShell 里如果已配置 profile，也可以直接执行 `just`。---
 
 ## 硬件信息
 
