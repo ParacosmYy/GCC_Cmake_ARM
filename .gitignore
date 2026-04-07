@@ -1,0 +1,110 @@
+# ============================
+# STM32 + CMake 项目 Gitignore
+# ============================
+
+# 构建输出目录
+build/
+Build/
+BUILD/
+out/
+Out/
+OUT/
+cmake-build-*/
+
+# CubeMX 生成的临时文件
+.mxproject
+.mxconfig
+
+# STM32CubeIDE 特定文件
+.settings/
+.cproject
+.project
+*.launch
+
+# VS Code 特定文件（可选，如果需要共享配置则注释掉）
+#.vscode/
+
+# CLion 特定文件
+.idea/
+cmake-build-*/
+
+# Keil MDK 特定文件
+Objects/
+Listings/
+*.uvguix.*
+*.uvoptx
+*.uvprojx
+*.uvmpw
+*.scvd
+*.dbgconf
+JLinkSettings.ini
+JLinkLog.txt
+
+# IAR 特定文件
+Debug/
+Release/
+settings/
+*.dep
+*.ewd
+*.ewp
+*.ewt
+*.eww
+
+# 编译生成的文件
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.d
+*.dep
+*.crf
+*.iex
+*.axf
+*.htm
+*.lnp
+*.sct
+*.sct.bak
+
+# 库文件
+*.a
+*.lib
+*.la
+*.lo
+
+# 依赖文件
+*.d
+
+# CMake 生成的文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+CMakeUserPresets.json
+
+# Ninja 特定文件
+.ninja_deps
+.ninja_log
+build.ninja
+
+# 备份文件
+*.bak
+*.tmp
+*.temp
+*~
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 日志文件
+*.log
+
