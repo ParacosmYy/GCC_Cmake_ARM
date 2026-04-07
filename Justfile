@@ -1,7 +1,6 @@
 set shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 
-# 这个 Justfile 只负责统一入口，不重写 CMake / OpenOCD 逻辑。
-# 团队日常直接使用 build、flash、deploy、format、check、clean、rebuild。
+# Unified local entrypoint for build, flash, formatting, and local CI.
 
 cmake := 'C:/Program Files/CMake/bin/cmake.exe'
 clang_format := 'D:/DevEnv/llvm/bin/clang-format.exe'
@@ -16,28 +15,33 @@ debug_build_dir := 'build/Debug'
 release_build_dir := 'build/Release'
 debug_elf := 'build/Debug/TEST_VSCODE_LPUART1_2.elf'
 
-build: # 编译 Debug
+build: # Build Debug
     @& '{{cmake}}' --preset {{debug_preset}}
     @& '{{cmake}}' --build --preset {{debug_preset}}
 
-build-release: # 编译 Release
+build-release: # Build Release
     @& '{{cmake}}' --preset {{release_preset}}
     @& '{{cmake}}' --build --preset {{release_preset}}
 
-flash: # 烧录 Debug 固件
+flash: # Flash Debug firmware
     @& '{{openocd}}' -f '{{cmsis_dap_cfg}}' -f '{{stm32h7x_cfg}}' -c "program {{debug_elf}} verify reset exit"
 
-deploy: build flash # 编译并烧录 Debug
+deploy: build flash # Build and flash Debug
 
-clean: # 清理构建产物
+clean: # Remove build output
     @if (Test-Path '{{debug_build_dir}}') { Remove-Item -Recurse -Force '{{debug_build_dir}}' }
     @if (Test-Path '{{release_build_dir}}') { Remove-Item -Recurse -Force '{{release_build_dir}}' }
 
-rebuild: clean build # 完整重建 Debug
+rebuild: clean build # Rebuild Debug from scratch
 
-format: # 格式化 C/C++ 源码
-    @$files = Get-ChildItem -Path 'Core/Inc','Core/Src' -Recurse -File | Where-Object { $_.Extension -in '.c', '.h' }
+format: # Format user-owned application sources
+    @$files = @()
+    if (Test-Path 'App/Inc') { $files += Get-ChildItem -Path 'App/Inc' -Recurse -File | Where-Object { $_.Extension -eq '.h' } }
+    if (Test-Path 'App/Src') { $files += Get-ChildItem -Path 'App/Src' -Recurse -File | Where-Object { $_.Extension -eq '.c' } }
     @foreach ($file in $files) { & '{{clang_format}}' -i $file.FullName }
 
-check: build # 格式检查 + 静态分析
-    @& '{{cppcheck}}' --project='{{debug_build_dir}}/compile_commands.json' --file-filter='Core/*' --enable=warning,style,performance,portability --inline-suppr --force --quiet --std=c11 --suppress=missingIncludeSystem
+check-static: # Run cppcheck on user-owned application sources only
+    @$hasAppSources = (Test-Path 'App/Src') -and ((Get-ChildItem -Path 'App/Src' -Recurse -Filter *.c -File | Measure-Object).Count -gt 0)
+    @if ($hasAppSources) { & '{{cppcheck}}' --project='{{debug_build_dir}}/compile_commands.json' --file-filter='App/*' --enable=warning,style,performance,portability --inline-suppr --force --quiet --std=c11 --suppress=missingIncludeSystem } else { Write-Host 'No user-owned App sources found. Skipping cppcheck.' }
+
+check: build check-static # Build Debug and run static analysis
