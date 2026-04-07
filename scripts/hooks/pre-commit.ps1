@@ -81,6 +81,18 @@ foreach ($file in $formatCandidates) {
     }
 }
 
+foreach ($file in $formatCandidates) {
+    $absolutePath = Join-Path $repoRoot $file
+    if (-not (Test-Path $absolutePath)) {
+        continue
+    }
+
+    & $clangFormat --dry-run --Werror --style=file $absolutePath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Formatting verification failed for '$file'. Please review the file and try again."
+    }
+}
+
 if ($formattedFiles.Count -gt 0) {
     Write-Host '[pre-commit] Auto-formatted and re-staged user-owned files:'
     $formattedFiles | ForEach-Object { Write-Host "  - $_" }

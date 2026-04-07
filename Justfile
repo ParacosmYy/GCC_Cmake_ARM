@@ -35,13 +35,9 @@ clean: # Remove build output
 rebuild: clean build # Rebuild Debug from scratch
 
 format: # Format user-owned application sources
-    @$files = @()
-    if (Test-Path 'App/Inc') { $files += Get-ChildItem -Path 'App/Inc' -Recurse -File | Where-Object { $_.Extension -eq '.h' } }
-    if (Test-Path 'App/Src') { $files += Get-ChildItem -Path 'App/Src' -Recurse -File | Where-Object { $_.Extension -eq '.c' } }
-    @foreach ($file in $files) { & '{{clang_format}}' -i $file.FullName }
+    @$files = @(); if (Test-Path 'App/Inc') { $files += Get-ChildItem -Path 'App/Inc' -Recurse -File | Where-Object { $_.Extension -eq '.h' } }; if (Test-Path 'App/Src') { $files += Get-ChildItem -Path 'App/Src' -Recurse -File | Where-Object { $_.Extension -eq '.c' } }; foreach ($file in $files) { & '{{clang_format}}' -i $file.FullName }
 
 check-static: # Run cppcheck on user-owned application sources only
-    @$hasAppSources = (Test-Path 'App/Src') -and ((Get-ChildItem -Path 'App/Src' -Recurse -Filter *.c -File | Measure-Object).Count -gt 0)
-    @if ($hasAppSources) { & '{{cppcheck}}' --project='{{debug_build_dir}}/compile_commands.json' --file-filter='App/*' --enable=warning,style,performance,portability --inline-suppr --force --quiet --std=c11 --suppress=missingIncludeSystem } else { Write-Host 'No user-owned App sources found. Skipping cppcheck.' }
+    @if ((Test-Path 'App/Src') -and ((Get-ChildItem -Path 'App/Src' -Recurse -Filter *.c -File | Measure-Object).Count -gt 0)) { & '{{cppcheck}}' --project='{{debug_build_dir}}/compile_commands.json' --file-filter='App/*' --enable=warning,style,performance,portability --inline-suppr --force --quiet --std=c11 --suppress=missingIncludeSystem --suppress='*:*Drivers/*' --suppress='*:*Middlewares/*' --suppress='*:*Core/*' --error-exitcode=1 } else { Write-Host 'No user-owned App sources found. Skipping cppcheck.' }
 
 check: build check-static # Build Debug and run static analysis
