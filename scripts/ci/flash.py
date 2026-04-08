@@ -30,8 +30,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         "OpenOCD target config",
     )
 
+    # OpenOCD parses the -c payload with Tcl rules, so Windows backslashes in
+    # file paths must be normalized or they will be consumed as escapes.
+    elf_for_openocd = elf.resolve().as_posix()
+
     print(f"[flash] Flashing {elf}")
-    run_command([openocd, "-f", interface_cfg, "-f", target_cfg, "-c", f"program {elf} verify reset exit"])
+    run_command(
+        [
+            openocd,
+            "-f",
+            interface_cfg,
+            "-f",
+            target_cfg,
+            "-c",
+            f"program {{{elf_for_openocd}}} verify reset exit",
+        ]
+    )
     print("[flash] Flash completed successfully.")
     return 0
 
