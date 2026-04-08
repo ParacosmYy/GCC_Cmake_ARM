@@ -68,6 +68,19 @@
             }
         },
         {
+            "label": "Init Hooks",
+            "type": "shell",
+            "command": "D:/DevEnv/just/just.exe",
+            "args": [
+                "--justfile",
+                "${workspaceFolder}/Justfile",
+                "init-hooks"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
             "label": "just: check",
             "type": "shell",
             "command": "D:/DevEnv/just/just.exe",

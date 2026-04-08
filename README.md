@@ -2,7 +2,7 @@
 
 基于 GCC ARM 工具链和 CMake 构建系统的 STM32H743XIH6 项目模板，支持 CMSIS-DAP 烧录器调试。
 
-> 团队统一入口建议直接使用 `Justfile` 和 VS Code 任务；PowerShell 里如果已配置 profile，也可以直接执行 `just`。---
+> 团队统一入口建议直接使用 `Justfile` 和 VS Code 任务；PowerShell 里如果已配置 profile，也可以直接执行 `just`。hook 通过 `just init-hooks` 一次性安装，或者直接运行 VS Code 里的 `Init Hooks` 任务。自动格式化和静态分析只覆盖手写的 `Core/Inc/main.h` 和 `Core/Src/main.c`。
 
 ## 硬件信息
 
@@ -66,6 +66,8 @@
    ```
 2. 安装 `Just`、`OpenOCD` 和 `clang-format` / `cppcheck`
 3. 重启终端使环境变量生效
+4. 进入仓库后执行一次 `just init-hooks`，让 `lefthook` 接管本地提交检查
+    或者在 VS Code 的任务面板里执行 `Init Hooks`
 
 ### 统一工作流
 
@@ -87,10 +89,13 @@ just flash
 # 编译并烧录 Debug
 just deploy
 
-# 格式化 C/C++ 源码
+# 格式化手写 Core 文件
 just format
 
-# 格式检查 + 静态分析
+# 安装本仓库的 hook
+just init-hooks
+
+# 手写 Core 文件格式检查 + 静态分析
 just check
 
 # 清理构建产物
@@ -117,6 +122,12 @@ just rebuild
 4. 调试器会自动用 OpenOCD 连接 CMSIS-DAP，加载 `build/Debug/TEST_VSCODE_LPUART1_2.elf`，并停在 `main`。
 
 如果你只是想单独烧录，不进调试，就执行 `just flash`。
+
+### 本地 Hook
+
+- `pre-commit` 只负责手写 Core 文件的格式化和轻量检查。
+- 新克隆仓库后只需要执行一次 `just init-hooks`，不需要复制脚本到全局目录。
+- 需要静态分析时，手动执行 `just check-static`。
 
 ---
 
