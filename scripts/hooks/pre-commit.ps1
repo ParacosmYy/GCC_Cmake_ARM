@@ -33,7 +33,7 @@ $jsonCandidates = New-Object System.Collections.Generic.List[string]
 foreach ($file in $stagedFiles) {
     $normalized = $file.Replace('\', '/')
 
-    if ($normalized -match '^App/Inc/.+\.h$' -or $normalized -match '^App/Src/.+\.c$') {
+    if ($normalized -eq 'Core/Inc/main.h' -or $normalized -eq 'Core/Src/main.c') {
         $formatCandidates.Add($file)
     }
 
@@ -94,11 +94,11 @@ foreach ($file in $formatCandidates) {
 }
 
 if ($formattedFiles.Count -gt 0) {
-    Write-Host '[pre-commit] Auto-formatted and re-staged user-owned files:'
+    Write-Host '[pre-commit] Auto-formatted and re-staged hand-maintained Core files:'
     $formattedFiles | ForEach-Object { Write-Host "  - $_" }
 }
 else {
-    Write-Host '[pre-commit] No staged App files required formatting.'
+    Write-Host '[pre-commit] No staged hand-maintained Core files required formatting.'
 }
 
 Write-Host '[pre-commit] Quick checks passed.'
