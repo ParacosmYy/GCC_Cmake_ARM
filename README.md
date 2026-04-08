@@ -26,6 +26,7 @@ py -3 Scripts/ci/main.py <subcommand>
 py -3 Scripts/ci/main.py init
 py -3 Scripts/ci/main.py build --preset Debug
 py -3 Scripts/ci/main.py check
+py -3 Scripts/ci/main.py check --mode full
 ```
 
 ## 开发者与 IDE 入口
@@ -75,8 +76,9 @@ CubeMX 生成内容继续保留在：
   - 对手写 C/C++ 文件执行 `clang-format` 自动格式化并回暂存
   - 对 `Scripts/` 下的 Python 脚本执行语法校验
 - `pre-push`
-  - 执行完整 `check`
+  - 执行完整 `check --mode full`
 - `check`
+  - 默认本地模式优先检查变更文件
   - `format --check`
   - `lint`
   - `python-check`
