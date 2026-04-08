@@ -50,9 +50,9 @@
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void        SystemClock_Config(void);
+void SystemClock_Config(void);
 static void MPU_Config(void);
-void        MX_FREERTOS_Init(void);
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */

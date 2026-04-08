@@ -14,5 +14,5 @@ AlignAfterOpenBracket: Align
 BinPackArguments: false
 BinPackParameters: false
 AlignConsecutiveAssignments: Consecutive
-AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveDeclarations: None
 AlignConsecutiveMacros: Consecutive
