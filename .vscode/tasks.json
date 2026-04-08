@@ -6,14 +6,14 @@
             "type": "process",
             "command": "python3",
             "args": [
-                "scripts/ci/main.py",
+                "Scripts/ci/main.py",
                 "init"
             ],
             "windows": {
                 "command": "py",
                 "args": [
                     "-3",
-                    "scripts/ci/main.py",
+                    "Scripts/ci/main.py",
                     "init"
                 ]
             },
@@ -38,7 +38,7 @@
             "type": "process",
             "command": "python3",
             "args": [
-                "scripts/ci/main.py",
+                "Scripts/ci/main.py",
                 "build",
                 "--preset",
                 "Debug"
@@ -47,7 +47,7 @@
                 "command": "py",
                 "args": [
                     "-3",
-                    "scripts/ci/main.py",
+                    "Scripts/ci/main.py",
                     "build",
                     "--preset",
                     "Debug"
@@ -73,7 +73,7 @@
             "type": "process",
             "command": "python3",
             "args": [
-                "scripts/ci/main.py",
+                "Scripts/ci/main.py",
                 "build",
                 "--preset",
                 "Release"
@@ -82,7 +82,7 @@
                 "command": "py",
                 "args": [
                     "-3",
-                    "scripts/ci/main.py",
+                    "Scripts/ci/main.py",
                     "build",
                     "--preset",
                     "Release"
@@ -104,14 +104,14 @@
             "type": "process",
             "command": "python3",
             "args": [
-                "scripts/ci/main.py",
+                "Scripts/ci/main.py",
                 "check"
             ],
             "windows": {
                 "command": "py",
                 "args": [
                     "-3",
-                    "scripts/ci/main.py",
+                    "Scripts/ci/main.py",
                     "check"
                 ]
             },
@@ -134,14 +134,14 @@
             "type": "process",
             "command": "python3",
             "args": [
-                "scripts/ci/main.py",
+                "Scripts/ci/main.py",
                 "flash"
             ],
             "windows": {
                 "command": "py",
                 "args": [
                     "-3",
-                    "scripts/ci/main.py",
+                    "Scripts/ci/main.py",
                     "flash"
                 ]
             },
@@ -160,14 +160,14 @@
             "type": "process",
             "command": "python3",
             "args": [
-                "scripts/ci/main.py",
+                "Scripts/ci/main.py",
                 "clean"
             ],
             "windows": {
                 "command": "py",
                 "args": [
                     "-3",
-                    "scripts/ci/main.py",
+                    "Scripts/ci/main.py",
                     "clean"
                 ]
             },
