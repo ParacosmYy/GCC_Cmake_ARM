@@ -18,6 +18,14 @@ Windows 对应：
 py -3 Scripts/ci/main.py <subcommand>
 ```
 
+本地推荐：
+
+- `py -3 Scripts/ci/main.py check`
+
+完整质量门：
+
+- `py -3 Scripts/ci/main.py check --mode full`
+
 ## 目录约定
 
 CubeMX 生成内容：
@@ -78,3 +86,10 @@ CubeMX 生成内容：
 
 - `Core/Inc/main.h`
 - `Core/Src/main.c`
+
+## 本地与推送策略
+
+- 本地 `check` 默认使用更快的本地模式
+- 本地模式优先检查变更的手写 C/C++ 文件
+- 如果当前变更不涉及手写 C/C++，则跳过本地 `cppcheck`
+- `pre-push` 仍然执行完整模式，不降低最终质量门
