@@ -34,8 +34,8 @@ clean: # Remove build output
 
 rebuild: clean build # Rebuild Debug from scratch
 
-format: # Format hand-maintained sources only
-    @& '{{clang_format}}' -i 'Core/Inc/main.h' 'Core/Src/main.c'
+format: # Format Core sources and headers after CubeMX generation
+    @$files = @(); if (Test-Path 'Core/Inc') { $files += Get-ChildItem -Path 'Core/Inc' -Recurse -File | Where-Object { $_.Extension -eq '.h' } }; if (Test-Path 'Core/Src') { $files += Get-ChildItem -Path 'Core/Src' -Recurse -File | Where-Object { $_.Extension -eq '.c' } }; foreach ($file in $files) { & '{{clang_format}}' -i $file.FullName }
 
 check-static: # Run cppcheck on user-owned application sources only
     @if ((Test-Path 'App/Src') -and ((Get-ChildItem -Path 'App/Src' -Recurse -Filter *.c -File | Measure-Object).Count -gt 0)) { & '{{cppcheck}}' --project='{{debug_build_dir}}/compile_commands.json' --file-filter='App/*' --enable=warning,style,performance,portability --inline-suppr --force --quiet --std=c11 --suppress=missingIncludeSystem --suppress='*:*Drivers/*' --suppress='*:*Middlewares/*' --suppress='*:*Core/*' --error-exitcode=1 } else { Write-Host 'No user-owned App sources found. Skipping cppcheck.' }
