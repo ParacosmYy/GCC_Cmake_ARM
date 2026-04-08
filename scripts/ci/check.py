@@ -5,6 +5,7 @@ from collections.abc import Sequence
 import build as build_cmd
 import format as format_cmd
 import lint as lint_cmd
+import python_check as python_check_cmd
 import size as size_cmd
 
 
@@ -14,6 +15,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     format_cmd.main(["--check"])
     print("[check] lint")
     lint_cmd.main()
+    print("[check] python-check")
+    python_check_cmd.main([])
     print("[check] build Debug")
     build_cmd.main(["--preset", "Debug"])
     print("[check] build Release")

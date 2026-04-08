@@ -8,9 +8,10 @@ from common import build_dir, cmake_configure, handmaintained_lint_files, relati
 def main(argv: Sequence[str] | None = None) -> int:
     del argv
     cppcheck = resolve_tool_path("CPPCHECK", ["cppcheck"], "cppcheck")
+    cmake_configure("Debug")
     compile_commands = build_dir("Debug") / "compile_commands.json"
     if not compile_commands.is_file():
-        cmake_configure("Debug")
+        raise RuntimeError(f"compile_commands.json not found: {compile_commands}")
 
     files = handmaintained_lint_files()
     if not files:
