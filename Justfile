@@ -6,8 +6,7 @@ cmake := 'C:/Program Files/CMake/bin/cmake.exe'
 clang_format := 'D:/DevEnv/llvm/bin/clang-format.exe'
 cppcheck := 'D:/DevEnv/cppcheck/cppcheck.exe'
 openocd := 'D:/DevEnv/openocd/bin/openocd.exe'
-cmsis_dap_cfg := 'D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg'
-stm32h7x_cfg := 'D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg'
+cmsis_dap_cfg := 'D:/DevEnv/cfg/stm32h7_cmsis_dap.cfg'
 
 debug_preset := 'Debug'
 release_preset := 'Release'
@@ -24,7 +23,7 @@ build-release: # Build Release
     @& '{{cmake}}' --build --preset {{release_preset}}
 
 flash: # Flash Debug firmware
-    @& '{{openocd}}' -f '{{cmsis_dap_cfg}}' -f '{{stm32h7x_cfg}}' -c "program {{debug_elf}} verify reset exit"
+    @& '{{openocd}}' -f '{{cmsis_dap_cfg}}' -c "program {{debug_elf}} verify reset exit"
 
 deploy: build flash # Build and flash Debug
 
