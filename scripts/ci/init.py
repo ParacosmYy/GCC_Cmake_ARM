@@ -2,11 +2,23 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from common import CONFIG_PATH, configured_project_name, python_executable, resolve_tool_path, run_command
+from common import (
+    CONFIG_PATH,
+    configured_project_name,
+    print_info,
+    print_section,
+    print_success,
+    print_summary,
+    print_warning,
+    python_executable,
+    resolve_tool_path,
+    run_command,
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     del argv
+    print_section("init")
     tools = [
         ("python", python_executable()),
         ("cmake", resolve_tool_path("CMAKE", ["cmake"], "CMake")),
@@ -20,11 +32,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("lefthook", resolve_tool_path("LEFTHOOK", ["lefthook"], "lefthook")),
     ]
 
-    print(f"[init] Local CI config: {CONFIG_PATH}")
-    print(f"[init] Project name   : {configured_project_name()}")
-    print("[init] Toolchain check passed:")
+    print_info(f"[init] Local CI config: {CONFIG_PATH}")
+    print_info(f"[init] Project name   : {configured_project_name()}")
+    print_success("[init] Toolchain check passed:")
     for name, path in tools:
-        print(f"  {name:<20} {path}")
+        print_info(f"  {name:<20} {path}")
 
     optional_openocd = None
     try:
@@ -33,14 +45,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         optional_openocd = None
 
     if optional_openocd:
-        print(f"  {'openocd':<20} {optional_openocd}")
+        print_info(f"  {'openocd':<20} {optional_openocd}")
     else:
-        print("  openocd              optional (required for flash only)")
+        print_warning("  openocd              optional (required for flash only)")
 
     lefthook = dict(tools)["lefthook"]
-    print("[init] Installing git hooks via lefthook...")
+    print_info("[init] Installing git hooks via lefthook...")
     run_command([lefthook, "install"])
-    print("[init] Local CI bootstrap complete.")
+    print_summary("[init] Local CI bootstrap complete.")
     return 0
 
 
