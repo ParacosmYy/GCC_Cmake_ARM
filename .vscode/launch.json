@@ -2,19 +2,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug STM32H743 (OpenOCD)",
+            "name": "Debug STM32 (OpenOCD)",
             "type": "cortex-debug",
             "request": "launch",
             "servertype": "openocd",
             "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/Debug/TEST_VSCODE_LPUART1_2.elf",
-            "gdbPath": "D:/DevEnv/GNU-tools-for-STM32/bin/arm-none-eabi-gdb.exe",
-            "serverpath": "D:/DevEnv/openocd/bin/openocd.exe",
+            "executable": "${config:localCi.debug.elfPath}",
+            "gdbPath": "${config:localCi.debug.gdbPath}",
+            "serverpath": "${config:localCi.debug.openocdPath}",
             "configFiles": [
-                "D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg",
-                "D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg"
+                "${config:localCi.debug.openocdInterfaceCfg}",
+                "${config:localCi.debug.openocdTargetCfg}"
             ],
-            "preLaunchTask": "just: build",
+            "preLaunchTask": "ci: build",
             "runToEntryPoint": "main",
             "showDevDebugOutput": "raw",
             "rtos": "FreeRTOS"

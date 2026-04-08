@@ -2,122 +2,308 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "just: build",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
+            "label": "ci: init",
+            "type": "process",
+            "command": "python3",
             "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "build"
+                "scripts/ci/main.py",
+                "init"
             ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "init"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CMAKE": "${config:localCi.tools.cmake}",
+                    "NINJA": "${config:localCi.tools.ninja}",
+                    "CLANG_FORMAT": "${config:localCi.tools.clangFormat}",
+                    "CPPCHECK": "${config:localCi.tools.cppcheck}",
+                    "LEFTHOOK": "${config:localCi.tools.lefthook}",
+                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
+                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}",
+                    "ARM_NONE_EABI_SIZE": "${config:localCi.tools.armSize}",
+                    "OPENOCD": "${config:localCi.tools.openocd}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: configure",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "configure"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "configure"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CMAKE": "${config:localCi.tools.cmake}",
+                    "NINJA": "${config:localCi.tools.ninja}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: build",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "build",
+                "--preset",
+                "Debug"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "build",
+                    "--preset",
+                    "Debug"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CMAKE": "${config:localCi.tools.cmake}",
+                    "NINJA": "${config:localCi.tools.ninja}",
+                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
+                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}"
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: build-release",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "build",
+                "--preset",
+                "Release"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "build",
+                    "--preset",
+                    "Release"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CMAKE": "${config:localCi.tools.cmake}",
+                    "NINJA": "${config:localCi.tools.ninja}",
+                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
+                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: check",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "check"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "check"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CMAKE": "${config:localCi.tools.cmake}",
+                    "NINJA": "${config:localCi.tools.ninja}",
+                    "CLANG_FORMAT": "${config:localCi.tools.clangFormat}",
+                    "CPPCHECK": "${config:localCi.tools.cppcheck}",
+                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
+                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}",
+                    "ARM_NONE_EABI_SIZE": "${config:localCi.tools.armSize}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: format",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "format"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "format"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CLANG_FORMAT": "${config:localCi.tools.clangFormat}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: format-check",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "format",
+                "--check"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "format",
+                    "--check"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CLANG_FORMAT": "${config:localCi.tools.clangFormat}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: lint",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "lint"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "lint"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CMAKE": "${config:localCi.tools.cmake}",
+                    "NINJA": "${config:localCi.tools.ninja}",
+                    "CPPCHECK": "${config:localCi.tools.cppcheck}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: size",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "size",
+                "--preset",
+                "Debug"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "size",
+                    "--preset",
+                    "Debug"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "ARM_NONE_EABI_SIZE": "${config:localCi.tools.armSize}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: flash",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "flash"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "flash"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OPENOCD": "${config:localCi.tools.openocd}",
+                    "OPENOCD_INTERFACE_CFG": "${config:localCi.debug.openocdInterfaceCfg}",
+                    "OPENOCD_TARGET_CFG": "${config:localCi.debug.openocdTargetCfg}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ci: clean",
+            "type": "process",
+            "command": "python3",
+            "args": [
+                "scripts/ci/main.py",
+                "clean"
+            ],
+            "windows": {
+                "command": "py",
+                "args": [
+                    "-3",
+                    "scripts/ci/main.py",
+                    "clean"
+                ]
+            },
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "group": "build"
-        },
-        {
-            "label": "just: build-release",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
-            "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "build-release"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
-        },
-        {
-            "label": "just: flash",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
-            "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "flash"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
-        },
-        {
-            "label": "just: deploy",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
-            "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "deploy"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
-        },
-        {
-            "label": "just: format",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
-            "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "format"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
-        },
-        {
-            "label": "Init Hooks",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
-            "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "init-hooks"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
-        },
-        {
-            "label": "just: check",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
-            "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "check"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
-        },
-        {
-            "label": "just: clean",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
-            "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "clean"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
-        },
-        {
-            "label": "just: rebuild",
-            "type": "shell",
-            "command": "D:/DevEnv/just/just.exe",
-            "args": [
-                "--justfile",
-                "${workspaceFolder}/Justfile",
-                "rebuild"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
+            "problemMatcher": []
         }
     ]
 }

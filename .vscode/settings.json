@@ -1,11 +1,24 @@
 {
     "editor.formatOnSave": true,
-    "clangd.path": "D:/DevEnv/llvm/bin/clangd.exe",
+    "clangd.path": "clangd",
     "clangd.arguments": [
         "--compile-commands-dir=${workspaceFolder}/build/Debug",
-        "--background-index",
-        "--query-driver=D:/DevEnv/GNU-tools-for-STM32/bin/arm-none-eabi-*.exe"
+        "--background-index"
     ],
+    "localCi.tools.cmake": "C:/Program Files/CMake/bin/cmake.exe",
+    "localCi.tools.ninja": "D:/DevEnv/ninja/ninja.exe",
+    "localCi.tools.clangFormat": "D:/DevEnv/llvm/bin/clang-format.exe",
+    "localCi.tools.cppcheck": "D:/DevEnv/cppcheck/cppcheck.exe",
+    "localCi.tools.lefthook": "D:/DevEnv/lefthook/lefthook.exe",
+    "localCi.tools.openocd": "D:/DevEnv/openocd/bin/openocd.exe",
+    "localCi.tools.armGcc": "D:/DevEnv/GNU-tools-for-STM32/bin/arm-none-eabi-gcc.exe",
+    "localCi.tools.armObjcopy": "D:/DevEnv/GNU-tools-for-STM32/bin/arm-none-eabi-objcopy.exe",
+    "localCi.tools.armSize": "D:/DevEnv/GNU-tools-for-STM32/bin/arm-none-eabi-size.exe",
+    "localCi.debug.elfPath": "${workspaceFolder}/build/Debug/TEST_VSCODE_LPUART1_2.elf",
+    "localCi.debug.gdbPath": "arm-none-eabi-gdb",
+    "localCi.debug.openocdPath": "${config:localCi.tools.openocd}",
+    "localCi.debug.openocdInterfaceCfg": "D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg",
+    "localCi.debug.openocdTargetCfg": "D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg",
     "[c]": {
         "editor.formatOnSave": false,
         "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
