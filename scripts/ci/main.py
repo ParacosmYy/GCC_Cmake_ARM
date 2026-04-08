@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 
 import build as build_cmd
 import check as check_cmd
@@ -11,6 +12,7 @@ import format as format_cmd
 import init as init_cmd
 import lint as lint_cmd
 import size as size_cmd
+from common import print_error, print_section
 
 
 def main() -> int:
@@ -48,30 +50,37 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    if args.command == "init":
-        return init_cmd.main()
-    if args.command == "configure":
-        return configure_cmd.main(["--preset", args.preset])
-    if args.command == "build":
-        return build_cmd.main(["--preset", args.preset])
-    if args.command == "format":
-        forwarded_args: list[str] = []
-        if args.check:
-            forwarded_args.append("--check")
-        return format_cmd.main(forwarded_args)
-    if args.command == "lint":
-        return lint_cmd.main(["--mode", args.mode])
-    if args.command == "size":
-        return size_cmd.main(["--preset", args.preset])
-    if args.command == "check":
-        return check_cmd.main(["--mode", args.mode])
-    if args.command == "flash":
-        forwarded_args = []
-        if args.preset:
-            forwarded_args.extend(["--preset", args.preset])
-        return flash_cmd.main(forwarded_args)
-    if args.command == "clean":
-        return clean_cmd.main()
+    try:
+        if args.command == "init":
+            return init_cmd.main()
+        if args.command == "configure":
+            return configure_cmd.main(["--preset", args.preset])
+        if args.command == "build":
+            return build_cmd.main(["--preset", args.preset])
+        if args.command == "format":
+            forwarded_args: list[str] = []
+            if args.check:
+                forwarded_args.append("--check")
+            return format_cmd.main(forwarded_args)
+        if args.command == "lint":
+            return lint_cmd.main(["--mode", args.mode])
+        if args.command == "size":
+            return size_cmd.main(["--preset", args.preset])
+        if args.command == "check":
+            return check_cmd.main(["--mode", args.mode])
+        if args.command == "flash":
+            forwarded_args = []
+            if args.preset:
+                forwarded_args.extend(["--preset", args.preset])
+            return flash_cmd.main(forwarded_args)
+        if args.command == "clean":
+            return clean_cmd.main()
+    except Exception as exc:
+        print_section("Local CI Failed")
+        print_error(f"[ci] Command '{args.command}' failed: {exc}")
+        if os.environ.get("LOCAL_CI_TRACEBACK") == "1":
+            raise
+        return 1
 
     raise RuntimeError(f"Unsupported command: {args.command}")
 
