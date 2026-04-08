@@ -108,3 +108,6 @@ desktop.ini
 # 日志文件
 *.log
 
+# Python
+__pycache__/
+*.py[cod]
