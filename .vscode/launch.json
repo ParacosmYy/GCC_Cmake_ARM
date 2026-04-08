@@ -16,7 +16,6 @@
             ],
             "preLaunchTask": "ci: build",
             "runToEntryPoint": "main",
-            "showDevDebugOutput": "raw",
             "rtos": "FreeRTOS"
         }
     ]
