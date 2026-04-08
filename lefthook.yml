@@ -1,8 +1,8 @@
 pre-commit:
   commands:
     local-format:
-      run: py -3 scripts/hooks/pre_commit.py
+      run: py -3 Scripts/hooks/pre_commit.py
 pre-push:
   commands:
     local-ci:
-      run: py -3 scripts/hooks/pre_push.py
+      run: py -3 Scripts/hooks/pre_push.py
