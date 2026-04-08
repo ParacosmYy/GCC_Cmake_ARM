@@ -179,6 +179,29 @@ def repo_candidate_paths() -> list[str]:
     return sorted(set(paths))
 
 
+def git_has_head() -> bool:
+    result = run_command(["git", "rev-parse", "--verify", "HEAD"], check=False, capture_output=True)
+    return result.returncode == 0
+
+
+def changed_repo_paths() -> list[str]:
+    if not git_has_head():
+        return repo_candidate_paths()
+
+    tracked = run_command(
+        ["git", "diff", "--name-only", "--diff-filter=ACMR", "HEAD", "--"],
+        capture_output=True,
+    )
+    untracked = run_command(
+        ["git", "ls-files", "--others", "--exclude-standard", "--full-name", "--"],
+        capture_output=True,
+    )
+
+    paths = [normalize_repo_path(line) for line in tracked.stdout.splitlines() if line.strip()]
+    paths.extend(normalize_repo_path(line) for line in untracked.stdout.splitlines() if line.strip())
+    return sorted(set(paths))
+
+
 def quality_scope_config(scope: str) -> dict[str, Any]:
     quality = get_optional(load_config(), "quality", {})
     return get_optional(quality, scope, {})
@@ -207,12 +230,34 @@ def managed_repo_paths(scope: str) -> list[str]:
     return sorted(set(matches))
 
 
+def changed_managed_repo_paths(scope: str) -> list[str]:
+    include_patterns = quality_patterns(scope, "include")
+    exclude_patterns = quality_patterns(scope, "exclude")
+    if not include_patterns:
+        return []
+
+    matches: list[str] = []
+    for candidate in changed_repo_paths():
+        if not matches_any_pattern(candidate, include_patterns):
+            continue
+        if exclude_patterns and matches_any_pattern(candidate, exclude_patterns):
+            continue
+        candidate_path = repo_root() / candidate
+        if candidate_path.is_file():
+            matches.append(candidate)
+    return sorted(set(matches))
+
+
 def handmaintained_format_files() -> list[Path]:
     return [repo_root() / item for item in managed_repo_paths("format")]
 
 
 def handmaintained_lint_files() -> list[Path]:
     return [repo_root() / item for item in managed_repo_paths("lint")]
+
+
+def changed_handmaintained_lint_files() -> list[Path]:
+    return [repo_root() / item for item in changed_managed_repo_paths("lint")]
 
 
 def is_handmaintained_format_path(repo_relative_path: str) -> bool:
