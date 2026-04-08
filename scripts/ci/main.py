@@ -35,7 +35,11 @@ def main() -> int:
     size_parser = subparsers.add_parser("size", help="Print firmware size summary.")
     size_parser.add_argument("--preset", choices=["Debug", "Release"], default="Debug")
 
-    subparsers.add_parser("check", help="Run the full local quality gate.")
+    lint_parser = subparsers.choices["lint"]
+    lint_parser.add_argument("--mode", choices=["auto", "changed", "full"], default="auto")
+
+    check_parser = subparsers.add_parser("check", help="Run the full local quality gate.")
+    check_parser.add_argument("--mode", choices=["local", "full"], default="local")
 
     flash_parser = subparsers.add_parser("flash", help="Flash the firmware with OpenOCD.")
     flash_parser.add_argument("--preset", choices=["Debug", "Release"])
@@ -56,11 +60,11 @@ def main() -> int:
             forwarded_args.append("--check")
         return format_cmd.main(forwarded_args)
     if args.command == "lint":
-        return lint_cmd.main()
+        return lint_cmd.main(["--mode", args.mode])
     if args.command == "size":
         return size_cmd.main(["--preset", args.preset])
     if args.command == "check":
-        return check_cmd.main()
+        return check_cmd.main(["--mode", args.mode])
     if args.command == "flash":
         forwarded_args = []
         if args.preset:
