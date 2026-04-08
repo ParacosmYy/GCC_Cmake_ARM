@@ -6,12 +6,44 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any, Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = REPO_ROOT / ".local-ci" / "config.json"
+ANSI_RESET = "\033[0m"
+ANSI_COLORS = {
+    "red": "\033[31m",
+    "green": "\033[32m",
+    "yellow": "\033[33m",
+    "blue": "\033[34m",
+    "magenta": "\033[35m",
+    "cyan": "\033[36m",
+    "bold": "\033[1m",
+}
+
+
+def _enable_windows_virtual_terminal() -> None:
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-11)
+        if handle == 0:
+            return
+        mode = ctypes.c_uint32()
+        if kernel32.GetConsoleMode(handle, ctypes.byref(mode)) == 0:
+            return
+        kernel32.SetConsoleMode(handle, mode.value | 0x0004)
+    except Exception:
+        return
+
+
+_enable_windows_virtual_terminal()
 
 
 def repo_root() -> Path:
@@ -45,6 +77,61 @@ def run_command(
             print(result.stderr, end="", file=sys.stderr)
         raise subprocess.CalledProcessError(result.returncode, command, result.stdout, result.stderr)
     return result
+
+
+def supports_color() -> bool:
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    return sys.stdout.isatty()
+
+
+def colorize(text: str, color: str) -> str:
+    if not supports_color() or color not in ANSI_COLORS:
+        return text
+    return f"{ANSI_COLORS[color]}{text}{ANSI_RESET}"
+
+
+def print_line(message: str = "") -> None:
+    print(message, flush=True)
+
+
+def print_info(message: str) -> None:
+    print_line(colorize(message, "cyan"))
+
+
+def print_success(message: str) -> None:
+    print_line(colorize(message, "green"))
+
+
+def print_warning(message: str) -> None:
+    print_line(colorize(message, "yellow"))
+
+
+def print_error(message: str) -> None:
+    print_line(colorize(message, "red"))
+
+
+def print_section(title: str) -> None:
+    line = f"== {title} =="
+    print_line(colorize(line, "blue"))
+
+
+def print_summary(message: str) -> None:
+    print_line(colorize(message, "bold"))
+
+
+def format_duration(seconds: float) -> str:
+    if seconds < 1:
+        return f"{seconds * 1000:.0f}ms"
+    return f"{seconds:.2f}s"
+
+
+def timed_call(fn, *args, **kwargs):
+    start = time.perf_counter()
+    result = fn(*args, **kwargs)
+    return result, time.perf_counter() - start
 
 
 def get_optional(mapping: dict[str, Any] | None, key: str, default: Any = None) -> Any:
@@ -294,14 +381,14 @@ def cmake_configure(preset: str) -> None:
     cmake = resolve_tool_path("CMAKE", ["cmake"], "CMake")
     ninja = resolve_tool_path("NINJA", ["ninja"], "Ninja")
     actual_preset = logical_preset_name(preset)
-    print(f"[configure] Preset: {preset} -> {actual_preset}")
+    print_info(f"[configure] Preset: {preset} -> {actual_preset}")
     run_command([cmake, "--preset", actual_preset, f"-DCMAKE_MAKE_PROGRAM={ninja}"])
 
 
 def cmake_build(preset: str) -> None:
     cmake = resolve_tool_path("CMAKE", ["cmake"], "CMake")
     actual_preset = logical_preset_name(preset)
-    print(f"[build] Preset: {preset} -> {actual_preset}")
+    print_info(f"[build] Preset: {preset} -> {actual_preset}")
     run_command([cmake, "--build", "--preset", actual_preset])
 
 
@@ -368,9 +455,9 @@ def clean_build_directories() -> None:
 
         if directory.exists():
             shutil.rmtree(directory)
-            print(f"[clean] Removed {directory}")
+            print_success(f"[clean] Removed {directory}")
         else:
-            print(f"[clean] Nothing to remove for {preset}")
+            print_warning(f"[clean] Nothing to remove for {preset}")
 
 
 def size_summary(preset: str) -> dict[str, Any]:
