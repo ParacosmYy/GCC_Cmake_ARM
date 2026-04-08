@@ -58,13 +58,6 @@ py -3 scripts/ci/main.py check
 
 所以你现在的 VS Code Task 和 `just` 没有直接调用关系，它们是两个并列的便利层，底层都指向同一个 Python 主入口。
 
-这样的好处是：
-
-- 云端 CI 不依赖 `just`
-- 本地终端可以用 `just`
-- IDE 可以用 Task
-- 底层逻辑始终只有一份
-
 ## 目录分层
 
 - `scripts/ci/main.py`：企业标准入口
@@ -182,16 +175,13 @@ STM32G4 示例配置在这里：
 
 VS Code 只是 IDE 便利层，不是企业标准入口。
 
-当前可用 Task：
+考虑到你们当前是 GCC 初始开发团队，仓库保留了一组精简的核心 Task，方便团队成员直接在 IDE 里完成日常动作。
+
+当前保留的核心 Task：
 
 - `ci: init`
-- `ci: configure`
 - `ci: build`
 - `ci: build-release`
-- `ci: format`
-- `ci: format-check`
-- `ci: lint`
-- `ci: size`
 - `ci: check`
 - `ci: flash`
 - `ci: clean`
@@ -202,6 +192,8 @@ VS Code 只是 IDE 便利层，不是企业标准入口。
 
 Windows 下 Task 用 `py -3`，Linux / macOS 下用 `python3`。  
 所有 Task 都直接调用 `scripts/ci/main.py`。
+
+`format`、`lint`、`size`、`configure` 这些动作仍然保留在企业标准入口和 `just` 里，但不再全部暴露到 VS Code Task 列表中，避免 IDE 菜单过长。
 
 调试配置在：
 
