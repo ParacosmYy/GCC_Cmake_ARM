@@ -1,8 +1,12 @@
-# User-Owned Application Code
+# 用户自维护代码布局
 
-Put hand-written application code here instead of editing CubeMX-generated files directly.
+本仓库把手写代码统一放在用户自维护目录中，而不是直接散落到 CubeMX 生成目录里。
 
-- `App/Inc`: user-owned headers checked by local CI
-- `App/Src`: user-owned sources checked by local CI
+- `App/`：应用层入口
+- `Bsp/`：板级支持
+- `Service/`：服务层
+- `Config/`：配置层
+- `Board/`：板级差异
+- `Scripts/`：自动化脚本
 
-Local CI intentionally ignores generated code under `Core/`, `Drivers/`, and `Middlewares/`.
+CubeMX 生成内容仍保留在 `Core/`、`Drivers/`、`Middlewares/` 中。
