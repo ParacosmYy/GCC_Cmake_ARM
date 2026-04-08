@@ -1,203 +1,267 @@
-# STM32H743XIH6 GCC + CMake 项目模板
+# STM32 本地 CI
 
-基于 GCC ARM 工具链和 CMake 构建系统的 STM32H743XIH6 项目模板，支持 CMSIS-DAP 烧录器调试。
+本仓库采用 Python 优先的本地 CI 设计，目标是让同一套流程同时适用于：
 
-> 团队统一入口建议直接使用 `Justfile` 和 VS Code 任务；PowerShell 里如果已配置 profile，也可以直接执行 `just`。hook 通过 `just init-hooks` 一次性安装，或者直接运行 VS Code 里的 `Init Hooks` 任务。自动格式化和静态分析只覆盖手写的 `Core/Inc/main.h` 和 `Core/Src/main.c`。
+- Windows 本地开发机
+- Linux 云端 CI Runner
+- 后续固件产物流程，例如版本注入、CRC、签名、OTA 打包
 
-## 硬件信息
+## 企业标准入口
 
-| 项目         | 规格                                                        |
-| ------------ | ----------------------------------------------------------- |
-| **芯片型号** | STM32H743XIH6                                               |
-| **封装**     | TFBGA240                                                    |
-| **内核**     | ARM Cortex-M7 (480MHz)                                      |
-| **Flash**    | 2 MB                                                        |
-| **RAM**      | 1 MB (含 864KB AXI-SRAM + 128KB SRAM1/2/3 + 64KB ITCM/DTCM) |
-| **烧录器**   | CMSIS-DAP / DAPLink 兼容调试器                              |
-| **调试接口** | SWD (Serial Wire Debug)                                     |
+本仓库的企业标准入口是：
 
----
-
-## 项目特性
-
-- **RTOS**: FreeRTOS (CMSIS-RTOS v2 封装)
-- **通信**: LPUART1 (低功耗串口)
-- **DMA**: BDMA (备份 DMA) 支持收发双通道
-- **构建系统**: CMake + Ninja + Just
-- **标准**: C11
-
----
-
-## 工程结构
-
-```
-.
-├── CMakeLists.txt              # 主 CMake 配置
-├── CMakePresets.json           # CMake 预设配置
-├── TEST_VSCODE_LPUART1_2.ioc   # STM32CubeMX 配置文件
-├── startup_stm32h743xx.s       # 启动汇编文件
-├── STM32H743XX_FLASH.ld        # 链接脚本
-├── .gitignore                  # Git 忽略规则
-├── cmake/                      # CMake 模块
-│   ├── gcc-arm-none-eabi.cmake # GCC 工具链配置
-│   ├── starm-clang.cmake       # Clang 工具链配置 (可选)
-│   └── stm32cubemx/            # CubeMX 生成源配置
-├── Core/                       # 用户代码
-│   ├── Inc/                    # 头文件
-│   └── Src/                    # 源文件
-├── Drivers/                    # HAL 库和 CMSIS
-│   ├── CMSIS/                  # ARM CMSIS 核心
-│   └── STM32H7xx_HAL_Driver/   # STM32 HAL 库
-└── Middlewares/                # 中间件
-    └── Third_Party/FreeRTOS/   # FreeRTOS 内核
+```bash
+python3 scripts/ci/main.py <subcommand>
 ```
 
----
+在 Windows 上推荐使用：
+
+```powershell
+py -3 scripts/ci/main.py <subcommand>
+```
+
+例如：
+
+```powershell
+py -3 scripts/ci/main.py init
+py -3 scripts/ci/main.py build --preset Debug
+py -3 scripts/ci/main.py check
+```
+
+这条入口是整个本地 CI 和云端 CI 的统一标准接口，适用于：
+
+- 开发者终端
+- 云端 CI 流水线
+- 后续 Jenkins、GitLab CI、GitHub Actions、Azure DevOps
+
+## `just` 和 VS Code Task 的关系
+
+这里需要明确三层关系：
+
+1. 标准入口是 `scripts/ci/main.py`
+2. `just` 是开发者友好入口
+3. VS Code Task 是 IDE 便利层
+
+也就是说：
+
+- 企业标准不是 VS Code Task
+- 企业标准也不一定必须是 `just`
+- 本仓库当前的主标准是 Python CLI
+- `just` 只是对 Python CLI 的简化封装
+- VS Code Task 只是为了少敲命令
+
+当前仓库里：
+
+- `just build` 最终会调用 `scripts/ci/main.py build`
+- `just check` 最终会调用 `scripts/ci/main.py check`
+- VS Code Task 当前也是直接调用 `scripts/ci/main.py`
+
+所以你现在的 VS Code Task 和 `just` 没有直接调用关系，它们是两个并列的便利层，底层都指向同一个 Python 主入口。
+
+这样的好处是：
+
+- 云端 CI 不依赖 `just`
+- 本地终端可以用 `just`
+- IDE 可以用 Task
+- 底层逻辑始终只有一份
+
+## 目录分层
+
+- `scripts/ci/main.py`：企业标准入口
+- `scripts/ci/*.py`：可复用 CI 实现
+- `scripts/hooks/*.py`：Git Hook 包装层
+- `Justfile`：开发者友好命令层
+- `lefthook.yml`：Git 生命周期接入层
+- `.local-ci/config.json`：项目级配置
+- `.vscode/*`：IDE 便利层，不承载 CI 逻辑
 
 ## 快速开始
 
-### 前置要求
+企业标准入口：
 
-1. 安装 `GCC_Toolchain` 分支的工具链：
-   ```bash
-   git clone -b GCC_Toolchain https://github.com/ParacosmYy/GCC-Cmake-ARM-.git D:\DevEnv
-   cd D:\DevEnv
-   .\install_env.ps1
-   ```
-2. 安装 `Just`、`OpenOCD` 和 `clang-format` / `cppcheck`
-3. 重启终端使环境变量生效
-4. 进入仓库后执行一次 `just init-hooks`，让 `lefthook` 接管本地提交检查
-    或者在 VS Code 的任务面板里执行 `Init Hooks`
+```powershell
+py -3 scripts/ci/main.py init
+py -3 scripts/ci/main.py build --preset Debug
+py -3 scripts/ci/main.py check
+```
 
-### 统一工作流
+开发者快捷入口：
 
-```bash
-cd <项目目录>
-
-# 如果 `just` 没有加入 PATH，可以直接用绝对路径
-& 'D:\DevEnv\just\just.exe' --list
-
-# 编译 Debug
+```powershell
+just init
 just build
-
-# 编译 Release
-just build-release
-
-# 烧录 Debug 固件
-just flash
-
-# 编译并烧录 Debug
-just deploy
-
-# 格式化手写 Core 文件
-just format
-
-# 安装本仓库的 hook
-just init-hooks
-
-# 手写 Core 文件格式检查 + 静态分析
 just check
+```
 
-# 清理构建产物
-just clean
+## 支持的子命令
 
-# 完整重建 Debug
+企业标准子命令：
+
+```text
+init
+configure [--preset All|Debug|Release]
+build [--preset Debug|Release]
+format [--check]
+lint
+size [--preset Debug|Release]
+check
+flash [--preset Debug|Release]
+clean
+```
+
+对应的开发者快捷命令：
+
+```powershell
+just init
+just configure
+just build
 just rebuild
+just build-release
+just format
+just format-check
+just lint
+just size
+just check
+just flash
+just clean
 ```
 
-### 直接使用 OpenOCD
+## 环境要求
 
-```bash
-& 'D:\DevEnv\openocd\bin\openocd.exe' `
-    -f 'D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg' `
-    -f 'D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg' `
-    -c "program build/Debug/TEST_VSCODE_LPUART1_2.elf verify reset exit"
-```
+必需工具：
 
-### 调试
+- `python3`，Windows 下推荐 `py -3`
+- `just`
+- `cmake`
+- `ninja`
+- `arm-none-eabi-gcc`
+- `arm-none-eabi-objcopy`
+- `arm-none-eabi-size`
+- `clang-format`
+- `cppcheck`
+- `git`
+- `lefthook`
+- `openocd`，仅在需要烧录时必需
 
-1. 在 VS Code 里安装 `Cortex-Debug` 扩展（如果还没装）。
-2. 先执行 `just build`，或者直接按 `F5`，调试配置会自动先构建 Debug。
-3. 选择 `Debug STM32H743 (OpenOCD)`，然后按 `F5` 启动。
-4. 调试器会自动用 OpenOCD 连接 CMSIS-DAP，加载 `build/Debug/TEST_VSCODE_LPUART1_2.elf`，并停在 `main`。
+如果工具不在 `PATH`，可以通过这些环境变量覆盖：
 
-如果你只是想单独烧录，不进调试，就执行 `just flash`。
+- `CMAKE`
+- `NINJA`
+- `CLANG_FORMAT`
+- `CPPCHECK`
+- `OPENOCD`
+- `LEFTHOOK`
+- `ARM_NONE_EABI_GCC`
+- `ARM_NONE_EABI_OBJCOPY`
+- `ARM_NONE_EABI_SIZE`
 
-### 本地 Hook
+## 项目配置
 
-- `pre-commit` 只负责手写 Core 文件的格式化和轻量检查。
-- 新克隆仓库后只需要执行一次 `just init-hooks`，不需要复制脚本到全局目录。
-- 需要静态分析时，手动执行 `just check-static`。
+项目级差异集中放在：
 
----
+- [.local-ci/config.json](/d:/Workplace/Embeded_Workplace/H7_TEST_LPUART1/TEST_VSCODE_LPUART1_2/.local-ci/config.json)
 
-## 切换芯片指南
+这个文件负责描述：
 
-如需将此模板适配到其他 STM32H7 芯片或不同系列：
+- 项目名
+- Debug / Release preset 映射
+- 固件产物基名
+- 生成哪些附加产物
+- format / lint 检查范围
+- OpenOCD 默认目标配置
 
-### 1. 替换启动文件
+配置 schema 在这里：
 
-```bash
-# 从 CMSIS 设备支持包获取对应芯片的 startup_xxx.s
-# 例如 STM32H750: startup_stm32h750xx.s
-```
+- [.local-ci/config.schema.json](/d:/Workplace/Embeded_Workplace/H7_TEST_LPUART1/TEST_VSCODE_LPUART1_2/.local-ci/config.schema.json)
 
-### 2. 替换链接脚本
+STM32G4 示例配置在这里：
 
-```bash
-# 从 CMSIS 获取对应芯片的链接脚本
-# 修改 FLASH/RAM 起始地址和大小以匹配目标芯片
-```
+- [.local-ci/examples/stm32g4-config.json](/d:/Workplace/Embeded_Workplace/H7_TEST_LPUART1/TEST_VSCODE_LPUART1_2/.local-ci/examples/stm32g4-config.json)
 
-### 3. 修改 CMake 工具链配置
+## VS Code 集成
 
-编辑 `cmake/gcc-arm-none-eabi.cmake`：
+VS Code 只是 IDE 便利层，不是企业标准入口。
 
-```cmake
-# 修改芯片型号定义
-set(MCU_FLAGS "-mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard")
-add_definitions(-DSTM32H743xx)  # 改为对应型号，如 STM32H750xx
-```
+当前可用 Task：
 
-### 4. 更新 CubeMX 配置
+- `ci: init`
+- `ci: configure`
+- `ci: build`
+- `ci: build-release`
+- `ci: format`
+- `ci: format-check`
+- `ci: lint`
+- `ci: size`
+- `ci: check`
+- `ci: flash`
+- `ci: clean`
 
-1. 打开 `.ioc` 文件
-2. 选择新芯片型号
-3. 重新生成代码
+这些 Task 定义在：
 
----
+- [.vscode/tasks.json](/d:/Workplace/Embeded_Workplace/H7_TEST_LPUART1/TEST_VSCODE_LPUART1_2/.vscode/tasks.json)
 
-## 切换烧录器指南
+Windows 下 Task 用 `py -3`，Linux / macOS 下用 `python3`。  
+所有 Task 都直接调用 `scripts/ci/main.py`。
 
-根据使用的调试器选择对应配置文件：
+调试配置在：
 
-| 烧录器类型 | 配置文件             | 适用场景                      |
-| ---------- | -------------------- | ----------------------------- |
-| CMSIS-DAP  | `cmsis-dap.cfg`      | DAPLink、HS-Link、WCH-Link 等 |
-| J-Link     | `stm32h7_jlink.cfg`  | Segger J-Link / J-Link OB     |
-| ST-Link    | `stm32h7_stlink.cfg` | ST-Link V2/V3                 |
+- [.vscode/launch.json](/d:/Workplace/Embeded_Workplace/H7_TEST_LPUART1/TEST_VSCODE_LPUART1_2/.vscode/launch.json)
 
-当前项目默认使用 `D:/DevEnv/openocd/share/openocd/scripts/interface/cmsis-dap.cfg` 和 `D:/DevEnv/openocd/share/openocd/scripts/target/stm32h7x.cfg`。
+工具路径和调试参数覆盖在：
 
----
+- [.vscode/settings.json](/d:/Workplace/Embeded_Workplace/H7_TEST_LPUART1/TEST_VSCODE_LPUART1_2/.vscode/settings.json)
 
-## 引脚配置
+推荐扩展在：
 
-| 功能       | 引脚 | 模式     |
-| ---------- | ---- | -------- |
-| LPUART1_TX | PA9  | 复用推挽 |
-| LPUART1_RX | PA10 | 复用输入 |
+- [.vscode/extensions.json](/d:/Workplace/Embeded_Workplace/H7_TEST_LPUART1/TEST_VSCODE_LPUART1_2/.vscode/extensions.json)
 
----
+## 构建产物
 
-## 参考资源
+每个 preset 期望产出：
 
-- [STM32H743 Reference Manual (RM0433)](https://www.st.com/resource/en/reference_manual/rm0433-stm32h742-stm32h743753-and-stm32h750-value-line-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)
-- [STM32H743 Datasheet](https://www.st.com/resource/en/datasheet/stm32h743xi.pdf)
-- [FreeRTOS Documentation](https://www.freertos.org/Documentation/RTOS_book.html)
+- `.elf`
+- `.map`
+- `.bin`
+- `.hex`
 
----
+其中：
 
-## 许可证
+- `.elf` 和 `.map` 由项目构建产生
+- `.bin` 和 `.hex` 由 Python CI 层在构建后统一生成
 
-MIT License
+## 跨芯片复用
+
+如果后续是 G4、F4 或其他 STM32 项目要复用这套本地 CI，通常只需要：
+
+1. 复用 `scripts/ci/*.py`
+2. 复用 `scripts/hooks/*.py`
+3. 复用 `Justfile`
+4. 复用 `lefthook.yml`
+5. 新建自己的 `.local-ci/config.json`
+
+通常只需要调整这些项目级字段：
+
+- `project.name`
+- `build.presets`
+- `artifacts.base_name`
+- `quality.include`
+- `quality.exclude`
+- `flash.target_cfg`
+
+正常情况下，不应该因为换芯片就修改 Python CI 主体逻辑。
+
+## 接入说明
+
+详见：
+
+- [docs/local-ci-adoption.md](/d:/Workplace/Embeded_Workplace/H7_TEST_LPUART1/TEST_VSCODE_LPUART1_2/docs/local-ci-adoption.md)
+
+## Windows 说明
+
+有些 Windows 环境里，`python` 会指向 Microsoft Store 占位程序，而不是真实解释器。
+
+本仓库当前通过以下方式规避这个问题：
+
+- VS Code Task 使用 `py -3`
+- Windows Git Hook 使用 `py -3`
+- 文档里的 Windows 标准命令统一使用 `py -3 scripts/ci/main.py ...`
