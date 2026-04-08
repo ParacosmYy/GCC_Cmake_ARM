@@ -1,4 +1,8 @@
 pre-commit:
   commands:
-    quality-gate:
-      run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts/hooks/pre-commit.ps1
+    local-format:
+      run: py -3 scripts/hooks/pre_commit.py
+pre-push:
+  commands:
+    local-ci:
+      run: py -3 scripts/hooks/pre_push.py
