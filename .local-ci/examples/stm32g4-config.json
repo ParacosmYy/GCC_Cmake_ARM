@@ -1,0 +1,61 @@
+{
+  "$schema": "../config.schema.json",
+  "version": 1,
+  "project": {
+    "name": "STM32G4_APP"
+  },
+  "build": {
+    "root": "build",
+    "presets": {
+      "debug": "Debug",
+      "release": "Release"
+    }
+  },
+  "artifacts": {
+    "base_name": "STM32G4_APP",
+    "generated_formats": [
+      "bin",
+      "hex"
+    ]
+  },
+  "quality": {
+    "format": {
+      "include": [
+        "App/**/*.c",
+        "App/**/*.h",
+        "Core/Inc/main.h",
+        "Core/Src/main.c"
+      ],
+      "exclude": [
+        "Drivers/**",
+        "Middlewares/**",
+        "build/**"
+      ]
+    },
+    "lint": {
+      "include": [
+        "App/**/*.c",
+        "Core/Src/main.c"
+      ],
+      "exclude": [
+        "Drivers/**",
+        "Middlewares/**",
+        "build/**"
+      ]
+    }
+  },
+  "flash": {
+    "default_preset": "Debug",
+    "interface_cfg": "interface/cmsis-dap.cfg",
+    "target_cfg": "target/stm32g4x.cfg"
+  },
+  "hooks": {
+    "pre_commit": {
+      "json_validate": [
+        "CMakePresets.json",
+        ".vscode/*.json",
+        ".local-ci/*.json"
+      ]
+    }
+  }
+}

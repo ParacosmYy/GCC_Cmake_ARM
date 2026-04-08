@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/stm32-local-ci/config.schema.json",
+  "title": "STM32 Local CI Config",
+  "type": "object",
+  "required": [
+    "version",
+    "project",
+    "build",
+    "artifacts",
+    "quality",
+    "flash"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "build": {
+      "type": "object",
+      "required": [
+        "root",
+        "presets"
+      ],
+      "properties": {
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "presets": {
+          "type": "object",
+          "required": [
+            "debug",
+            "release"
+          ],
+          "properties": {
+            "debug": {
+              "type": "string",
+              "minLength": 1
+            },
+            "release": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "object",
+      "required": [
+        "base_name",
+        "generated_formats"
+      ],
+      "properties": {
+        "base_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generated_formats": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "bin",
+              "hex"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "quality": {
+      "type": "object",
+      "required": [
+        "format",
+        "lint"
+      ],
+      "properties": {
+        "format": {
+          "$ref": "#/$defs/pathRuleSet"
+        },
+        "lint": {
+          "$ref": "#/$defs/pathRuleSet"
+        }
+      },
+      "additionalProperties": false
+    },
+    "flash": {
+      "type": "object",
+      "required": [
+        "default_preset",
+        "interface_cfg",
+        "target_cfg"
+      ],
+      "properties": {
+        "default_preset": {
+          "type": "string",
+          "enum": [
+            "Debug",
+            "Release"
+          ]
+        },
+        "interface_cfg": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_cfg": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "hooks": {
+      "type": "object",
+      "properties": {
+        "pre_commit": {
+          "type": "object",
+          "properties": {
+            "json_validate": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "pathRuleSet": {
+      "type": "object",
+      "required": [
+        "include",
+        "exclude"
+      ],
+      "properties": {
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

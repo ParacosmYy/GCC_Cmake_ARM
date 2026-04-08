@@ -1,0 +1,70 @@
+{
+  "$schema": "./config.schema.json",
+  "version": 1,
+  "project": {
+    "name": "TEST_VSCODE_LPUART1_2"
+  },
+  "build": {
+    "root": "build",
+    "presets": {
+      "debug": "Debug",
+      "release": "Release"
+    }
+  },
+  "artifacts": {
+    "base_name": "TEST_VSCODE_LPUART1_2",
+    "generated_formats": [
+      "bin",
+      "hex"
+    ]
+  },
+  "quality": {
+    "format": {
+      "include": [
+        "App/**/*.c",
+        "App/**/*.cc",
+        "App/**/*.cpp",
+        "App/**/*.cxx",
+        "App/**/*.h",
+        "App/**/*.hh",
+        "App/**/*.hpp",
+        "App/**/*.hxx",
+        "Core/Inc/main.h",
+        "Core/Src/main.c"
+      ],
+      "exclude": [
+        "Drivers/**",
+        "Middlewares/**",
+        "build/**"
+      ]
+    },
+    "lint": {
+      "include": [
+        "App/**/*.c",
+        "App/**/*.cc",
+        "App/**/*.cpp",
+        "App/**/*.cxx",
+        "Core/Src/main.c"
+      ],
+      "exclude": [
+        "Drivers/**",
+        "Middlewares/**",
+        "build/**"
+      ]
+    }
+  },
+  "flash": {
+    "default_preset": "Debug",
+    "interface_cfg": "interface/cmsis-dap.cfg",
+    "target_cfg": "target/stm32h7x.cfg"
+  },
+  "hooks": {
+    "pre_commit": {
+      "json_validate": [
+        "CMakePresets.json",
+        ".vscode/*.json",
+        ".local-ci/*.json"
+      ]
+    }
+  }
+}
