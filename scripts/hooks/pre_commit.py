@@ -13,6 +13,7 @@ from common import (  # noqa: E402
     is_handmaintained_format_path,
     is_json_validation_path,
     normalize_repo_path,
+    python_executable,
     relative_repo_path,
     repo_root,
     resolve_tool_path,
@@ -42,6 +43,11 @@ def main() -> int:
 
     format_candidates = [item for item in staged if is_handmaintained_format_path(normalize_repo_path(item))]
     json_candidates = [item for item in staged if is_json_validation_path(normalize_repo_path(item))]
+    python_candidates = [
+        item
+        for item in staged
+        if normalize_repo_path(item).startswith("Scripts/") and normalize_repo_path(item).endswith(".py")
+    ]
     clang_format = None
 
     for item in format_candidates:
@@ -54,6 +60,10 @@ def main() -> int:
         absolute = repo_root() / item
         print(f"[pre-commit] Validating JSON: {item}")
         json.loads(absolute.read_text(encoding="utf-8"))
+
+    if python_candidates:
+        print("[pre-commit] Validating staged Python scripts...")
+        run_command([python_executable(), str(CI_DIR / "python_check.py"), *python_candidates])
 
     formatted: list[str] = []
     for item in format_candidates:
