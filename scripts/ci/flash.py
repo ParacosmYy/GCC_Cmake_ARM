@@ -5,10 +5,10 @@ from collections.abc import Sequence
 
 from common import (
     artifact_path,
-    flash_config_value,
     print_info,
     print_section,
     print_summary,
+    required_flash_config_value,
     resolve_openocd_config,
     resolve_tool_path,
     run_command,
@@ -20,7 +20,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--preset", choices=["Debug", "Release"])
     args = parser.parse_args(argv)
 
-    preset = args.preset or flash_config_value("default_preset", "Debug")
+    preset = args.preset or required_flash_config_value("default_preset")
     openocd = resolve_tool_path("OPENOCD", ["openocd"], "OpenOCD")
     elf = artifact_path(preset, "elf")
     if not elf.is_file():
@@ -29,13 +29,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     interface_cfg = resolve_openocd_config(
         openocd,
         "OPENOCD_INTERFACE_CFG",
-        flash_config_value("interface_cfg"),
+        required_flash_config_value("interface_cfg"),
         "OpenOCD interface config",
     )
     target_cfg = resolve_openocd_config(
         openocd,
         "OPENOCD_TARGET_CFG",
-        flash_config_value("target_cfg"),
+        required_flash_config_value("target_cfg"),
         "OpenOCD target config",
     )
 

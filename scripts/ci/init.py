@@ -23,6 +23,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("python", python_executable()),
         ("cmake", resolve_tool_path("CMAKE", ["cmake"], "CMake")),
         ("ninja", resolve_tool_path("NINJA", ["ninja"], "Ninja")),
+        ("clangd", resolve_tool_path("CLANGD", ["clangd"], "clangd")),
         ("arm-none-eabi-gcc", resolve_tool_path("ARM_NONE_EABI_GCC", ["arm-none-eabi-gcc"], "GNU Arm Embedded GCC")),
         ("arm-none-eabi-objcopy", resolve_tool_path("ARM_NONE_EABI_OBJCOPY", ["arm-none-eabi-objcopy"], "GNU Arm Embedded objcopy")),
         ("arm-none-eabi-size", resolve_tool_path("ARM_NONE_EABI_SIZE", ["arm-none-eabi-size"], "GNU Arm Embedded size")),
@@ -50,7 +51,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print_warning("  openocd              optional (required for flash only)")
 
     lefthook = dict(tools)["lefthook"]
-    print_info("[init] Installing Lefthook hooks...")
+    print_info("[init] Installing the default Lefthook hook set (pre-commit)...")
     run_command([lefthook, "install"])
     print_summary("[init] Local CI bootstrap complete.")
     return 0
