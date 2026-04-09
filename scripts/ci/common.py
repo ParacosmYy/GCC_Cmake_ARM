@@ -23,6 +23,19 @@ ANSI_COLORS = {
     "cyan": "\033[36m",
     "bold": "\033[1m",
 }
+DIAGNOSTIC_PATTERNS = [
+    re.compile(
+        r'(?P<path>[A-Za-z]:[\\/][^\r\n:]+?|[^:\r\n]+?\.[A-Za-z0-9_]+):'
+        r'(?P<line>\d+):(?P<column>\d+):\s*(?:(?P<severity>fatal error|error|warning|note):\s*)?(?P<message>[^\r\n]+)'
+    ),
+    re.compile(
+        r'(?P<path>[A-Za-z]:[\\/][^\r\n:]+?|[^:\r\n]+?\.[A-Za-z0-9_]+):'
+        r'(?P<line>\d+):\s*(?:(?P<severity>fatal error|error|warning|note):\s*)?(?P<message>[^\r\n]+)'
+    ),
+    re.compile(
+        r'File\s+"(?P<path>[^"]+)",\s+line\s+(?P<line>\d+)(?:,\s+in\s+[^\r\n]+)?\s*\r?\n(?P<message>[^\r\n]+)'
+    ),
+]
 
 
 def _enable_windows_virtual_terminal() -> None:
@@ -132,6 +145,65 @@ def timed_call(fn, *args, **kwargs):
     start = time.perf_counter()
     result = fn(*args, **kwargs)
     return result, time.perf_counter() - start
+
+
+def format_command(command: Iterable[str]) -> str:
+    parts = [str(item) for item in command]
+    return subprocess.list2cmdline(parts) if os.name == "nt" else " ".join(parts)
+
+
+def combine_process_output(stdout: str | None, stderr: str | None) -> str:
+    sections = [text for text in (stdout, stderr) if text]
+    return "\n".join(sections)
+
+
+def diagnostic_path(path_text: str) -> str:
+    path_text = path_text.strip().strip('"').replace("\\", "/")
+    candidate = Path(path_text)
+    if candidate.is_absolute():
+        try:
+            return relative_repo_path(candidate)
+        except Exception:
+            return normalize_repo_path(path_text)
+    return normalize_repo_path(path_text)
+
+
+def first_diagnostic(text: str) -> dict[str, str] | None:
+    for pattern in DIAGNOSTIC_PATTERNS:
+        match = pattern.search(text)
+        if not match:
+            continue
+        groups = {key: (value or "").strip() for key, value in match.groupdict().items()}
+        groups["path"] = diagnostic_path(groups["path"])
+        return groups
+    return None
+
+
+def print_failure_summary(
+    stage: str,
+    *,
+    stdout: str | None = None,
+    stderr: str | None = None,
+    command: Iterable[str] | None = None,
+) -> None:
+    print_error(f"[error] stage={stage}")
+    if command:
+        print_error(f"[error] command={format_command(command)}")
+
+    diagnostic = first_diagnostic(combine_process_output(stdout, stderr))
+    if not diagnostic:
+        return
+
+    print_error(f"[error] file={diagnostic['path']}")
+    if diagnostic.get("line") and diagnostic.get("column"):
+        print_error(f"[error] location={diagnostic['line']}:{diagnostic['column']}")
+    elif diagnostic.get("line"):
+        print_error(f"[error] line={diagnostic['line']}")
+
+    if diagnostic.get("severity"):
+        print_error(f"[error] severity={diagnostic['severity']}")
+    if diagnostic.get("message"):
+        print_error(f"[error] message={diagnostic['message']}")
 
 
 def get_optional(mapping: dict[str, Any] | None, key: str, default: Any = None) -> Any:

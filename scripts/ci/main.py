@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 
 import build as build_cmd
 import check as check_cmd
@@ -12,7 +13,7 @@ import format as format_cmd
 import init as init_cmd
 import lint as lint_cmd
 import size as size_cmd
-from common import print_error, print_section
+from common import print_error, print_failure_summary, print_section
 
 
 def main() -> int:
@@ -77,6 +78,13 @@ def main() -> int:
             return clean_cmd.main()
     except Exception as exc:
         print_section("Local CI Failed")
+        if isinstance(exc, subprocess.CalledProcessError):
+            print_failure_summary(
+                args.command,
+                stdout=exc.stdout,
+                stderr=exc.stderr,
+                command=exc.cmd if isinstance(exc.cmd, (list, tuple)) else None,
+            )
         print_error(f"[ci] Command '{args.command}' failed: {exc}")
         if os.environ.get("LOCAL_CI_TRACEBACK") == "1":
             raise
