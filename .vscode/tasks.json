@@ -10,26 +10,21 @@
                 "init"
             ],
             "windows": {
-                "command": "py",
+                "command": "powershell",
                 "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "Scripts/ci/run_with_user_env.ps1",
+                    "py",
                     "-3",
                     "Scripts/ci/main.py",
                     "init"
                 ]
             },
             "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "CMAKE": "${config:localCi.tools.cmake}",
-                    "NINJA": "${config:localCi.tools.ninja}",
-                    "CLANG_FORMAT": "${config:localCi.tools.clangFormat}",
-                    "CPPCHECK": "${config:localCi.tools.cppcheck}",
-                    "LEFTHOOK": "${config:localCi.tools.lefthook}",
-                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
-                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}",
-                    "ARM_NONE_EABI_SIZE": "${config:localCi.tools.armSize}",
-                    "OPENOCD": "${config:localCi.tools.openocd}"
-                }
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": []
         },
@@ -44,8 +39,14 @@
                 "Debug"
             ],
             "windows": {
-                "command": "py",
+                "command": "powershell",
                 "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "Scripts/ci/run_with_user_env.ps1",
+                    "py",
                     "-3",
                     "Scripts/ci/main.py",
                     "build",
@@ -54,50 +55,11 @@
                 ]
             },
             "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "CMAKE": "${config:localCi.tools.cmake}",
-                    "NINJA": "${config:localCi.tools.ninja}",
-                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
-                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}"
-                }
+                "cwd": "${workspaceFolder}"
             },
             "group": {
                 "kind": "build",
                 "isDefault": true
-            },
-            "problemMatcher": [
-                "$gcc"
-            ]
-        },
-        {
-            "label": "ci: build-release",
-            "type": "process",
-            "command": "python3",
-            "args": [
-                "Scripts/ci/main.py",
-                "build",
-                "--preset",
-                "Release"
-            ],
-            "windows": {
-                "command": "py",
-                "args": [
-                    "-3",
-                    "Scripts/ci/main.py",
-                    "build",
-                    "--preset",
-                    "Release"
-                ]
-            },
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "CMAKE": "${config:localCi.tools.cmake}",
-                    "NINJA": "${config:localCi.tools.ninja}",
-                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
-                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}"
-                }
             },
             "problemMatcher": [
                 "$gcc"
@@ -112,60 +74,21 @@
                 "check"
             ],
             "windows": {
-                "command": "py",
+                "command": "powershell",
                 "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "Scripts/ci/run_with_user_env.ps1",
+                    "py",
                     "-3",
                     "Scripts/ci/main.py",
                     "check"
                 ]
             },
             "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "CMAKE": "${config:localCi.tools.cmake}",
-                    "NINJA": "${config:localCi.tools.ninja}",
-                    "CLANG_FORMAT": "${config:localCi.tools.clangFormat}",
-                    "CPPCHECK": "${config:localCi.tools.cppcheck}",
-                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
-                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}",
-                    "ARM_NONE_EABI_SIZE": "${config:localCi.tools.armSize}"
-                }
-            },
-            "problemMatcher": [
-                "$gcc"
-            ]
-        },
-        {
-            "label": "ci: check-full",
-            "type": "process",
-            "command": "python3",
-            "args": [
-                "Scripts/ci/main.py",
-                "check",
-                "--mode",
-                "full"
-            ],
-            "windows": {
-                "command": "py",
-                "args": [
-                    "-3",
-                    "Scripts/ci/main.py",
-                    "check",
-                    "--mode",
-                    "full"
-                ]
-            },
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "CMAKE": "${config:localCi.tools.cmake}",
-                    "NINJA": "${config:localCi.tools.ninja}",
-                    "CLANG_FORMAT": "${config:localCi.tools.clangFormat}",
-                    "CPPCHECK": "${config:localCi.tools.cppcheck}",
-                    "ARM_NONE_EABI_GCC": "${config:localCi.tools.armGcc}",
-                    "ARM_NONE_EABI_OBJCOPY": "${config:localCi.tools.armObjcopy}",
-                    "ARM_NONE_EABI_SIZE": "${config:localCi.tools.armSize}"
-                }
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"
@@ -180,37 +103,17 @@
                 "flash"
             ],
             "windows": {
-                "command": "py",
+                "command": "powershell",
                 "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "Scripts/ci/run_with_user_env.ps1",
+                    "py",
                     "-3",
                     "Scripts/ci/main.py",
                     "flash"
-                ]
-            },
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OPENOCD": "${config:localCi.tools.openocd}",
-                    "OPENOCD_INTERFACE_CFG": "${config:localCi.debug.openocdInterfaceCfg}",
-                    "OPENOCD_TARGET_CFG": "${config:localCi.debug.openocdTargetCfg}"
-                }
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "ci: clean",
-            "type": "process",
-            "command": "python3",
-            "args": [
-                "Scripts/ci/main.py",
-                "clean"
-            ],
-            "windows": {
-                "command": "py",
-                "args": [
-                    "-3",
-                    "Scripts/ci/main.py",
-                    "clean"
                 ]
             },
             "options": {
