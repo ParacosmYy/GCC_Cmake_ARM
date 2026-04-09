@@ -24,19 +24,21 @@ def run_step(label: str, fn, *args: str) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["local", "full"], default="local")
+    parser.add_argument("--full", action="store_true")
+    parser.add_argument("--mode", choices=["local", "full"])
     args = parser.parse_args(argv)
 
+    mode = args.mode or ("full" if args.full else "local")
     total_start = time.perf_counter()
     print_section("Local CI Check")
-    print_success(f"[check] Mode: {args.mode}")
+    print_success(f"[check] Mode: {mode}")
     run_step("format-check", format_cmd.main, "--check")
-    lint_mode = "auto" if args.mode == "local" else "full"
-    run_step(f"lint ({lint_mode})", lint_cmd.main, "--mode", lint_mode)
     run_step("python-check", python_check_cmd.main)
     run_step("build Debug", build_cmd.main, "--preset", "Debug")
-    run_step("build Release", build_cmd.main, "--preset", "Release")
-    run_step("size Debug", size_cmd.main, "--preset", "Debug")
+    if mode == "full":
+        run_step("lint (full)", lint_cmd.main, "--mode", "full")
+        run_step("build Release", build_cmd.main, "--preset", "Release")
+        run_step("size Debug", size_cmd.main, "--preset", "Debug")
     total_elapsed = time.perf_counter() - total_start
     print_summary(f"[check] Local CI completed successfully in {format_duration(total_elapsed)}")
     return 0

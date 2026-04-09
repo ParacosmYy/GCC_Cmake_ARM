@@ -18,11 +18,11 @@ from common import print_error, print_failure_summary, print_section
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Unified local CI entrypoint for enterprise-standard local and cloud workflows."
+        description="Unified local CI entrypoint for the STM32 team base."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("init", help="Validate required tools and install Lefthook hooks.")
+    subparsers.add_parser("init", help="Validate required tools and install the default Lefthook hook set.")
 
     configure_parser = subparsers.add_parser("configure", help="Configure build directories.")
     configure_parser.add_argument("--preset", choices=["All", "Debug", "Release"], default="All")
@@ -41,8 +41,9 @@ def main() -> int:
     lint_parser = subparsers.choices["lint"]
     lint_parser.add_argument("--mode", choices=["auto", "changed", "full"], default="auto")
 
-    check_parser = subparsers.add_parser("check", help="Run the full local quality gate.")
-    check_parser.add_argument("--mode", choices=["local", "full"], default="local")
+    check_parser = subparsers.add_parser("check", help="Run the local quality gate.")
+    check_parser.add_argument("--full", action="store_true", help="Run the full local quality gate.")
+    check_parser.add_argument("--mode", choices=["local", "full"], help=argparse.SUPPRESS)
 
     flash_parser = subparsers.add_parser("flash", help="Flash the firmware with OpenOCD.")
     flash_parser.add_argument("--preset", choices=["Debug", "Release"])
@@ -68,7 +69,12 @@ def main() -> int:
         if args.command == "size":
             return size_cmd.main(["--preset", args.preset])
         if args.command == "check":
-            return check_cmd.main(["--mode", args.mode])
+            forwarded_args: list[str] = []
+            if args.full:
+                forwarded_args.append("--full")
+            if args.mode:
+                forwarded_args.extend(["--mode", args.mode])
+            return check_cmd.main(forwarded_args)
         if args.command == "flash":
             forwarded_args = []
             if args.preset:

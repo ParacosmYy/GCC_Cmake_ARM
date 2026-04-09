@@ -29,8 +29,11 @@ lint: # Run static analysis on hand-maintained sources
 size: # Print firmware size summary for Debug
     @{{python_cmd}} Scripts/ci/main.py size --preset Debug
 
-check: # Run the full local quality gate
+check: # Run the default local quality gate
     @{{python_cmd}} Scripts/ci/main.py check
+
+check-full: # Run the full local quality gate
+    @{{python_cmd}} Scripts/ci/main.py check --full
 
 flash: # Flash the configured firmware preset
     @{{python_cmd}} Scripts/ci/main.py flash
