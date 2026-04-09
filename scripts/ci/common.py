@@ -12,19 +12,108 @@ from typing import Any, Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / ".local-ci" / "config.json"
-_CONFIG_CACHE: dict[str, Any] | None = None
+LAUNCH_PATH = REPO_ROOT / ".vscode" / "launch.json"
+TEMPLATE_VERSION_PATH = REPO_ROOT / "Scripts" / "ci" / "template-version.json"
+_LAUNCH_CACHE: dict[str, Any] | None = None
 DEVENV_INSTALL_HINT = r"Run D:\DevEnv\install_env.ps1, reopen your terminal or VS Code, then try again."
-ANSI_RESET = "\033[0m"
-ANSI_COLORS = {
-    "red": "\033[31m",
-    "green": "\033[32m",
-    "yellow": "\033[33m",
-    "blue": "\033[34m",
-    "magenta": "\033[35m",
-    "cyan": "\033[36m",
-    "bold": "\033[1m",
+BUILD_ROOT = "build"
+PRESET_NAMES = {
+    "debug": "Debug",
+    "release": "Release",
 }
+GENERATED_FORMATS = ["bin", "hex"]
+DEFAULT_JSON_VALIDATE_PATTERNS = [
+    "CMakePresets.json",
+    ".vscode/*.json",
+    "Scripts/ci/template-version.json",
+]
+DEFAULT_FORMAT_INCLUDE = [
+    "App/**/*.c",
+    "App/**/*.cc",
+    "App/**/*.cpp",
+    "App/**/*.cxx",
+    "App/**/*.h",
+    "App/**/*.hh",
+    "App/**/*.hpp",
+    "App/**/*.hxx",
+    "Board/**/*.c",
+    "Board/**/*.cc",
+    "Board/**/*.cpp",
+    "Board/**/*.cxx",
+    "Board/**/*.h",
+    "Board/**/*.hh",
+    "Board/**/*.hpp",
+    "Board/**/*.hxx",
+    "Bsp/**/*.c",
+    "Bsp/**/*.cc",
+    "Bsp/**/*.cpp",
+    "Bsp/**/*.cxx",
+    "Bsp/**/*.h",
+    "Bsp/**/*.hh",
+    "Bsp/**/*.hpp",
+    "Bsp/**/*.hxx",
+    "Config/**/*.c",
+    "Config/**/*.cc",
+    "Config/**/*.cpp",
+    "Config/**/*.cxx",
+    "Config/**/*.h",
+    "Config/**/*.hh",
+    "Config/**/*.hpp",
+    "Config/**/*.hxx",
+    "Core/**/*.c",
+    "Core/**/*.cc",
+    "Core/**/*.cpp",
+    "Core/**/*.cxx",
+    "Core/**/*.h",
+    "Core/**/*.hh",
+    "Core/**/*.hpp",
+    "Core/**/*.hxx",
+    "Service/**/*.c",
+    "Service/**/*.cc",
+    "Service/**/*.cpp",
+    "Service/**/*.cxx",
+    "Service/**/*.h",
+    "Service/**/*.hh",
+    "Service/**/*.hpp",
+    "Service/**/*.hxx",
+]
+DEFAULT_FORMAT_EXCLUDE = [
+    "Drivers/**",
+    "Middlewares/**",
+    "build/**",
+]
+DEFAULT_LINT_INCLUDE = [
+    "App/**/*.c",
+    "App/**/*.cc",
+    "App/**/*.cpp",
+    "App/**/*.cxx",
+    "Board/**/*.c",
+    "Board/**/*.cc",
+    "Board/**/*.cpp",
+    "Board/**/*.cxx",
+    "Bsp/**/*.c",
+    "Bsp/**/*.cc",
+    "Bsp/**/*.cpp",
+    "Bsp/**/*.cxx",
+    "Config/**/*.c",
+    "Config/**/*.cc",
+    "Config/**/*.cpp",
+    "Config/**/*.cxx",
+    "Core/**/*.c",
+    "Core/**/*.cc",
+    "Core/**/*.cpp",
+    "Core/**/*.cxx",
+    "Service/**/*.c",
+    "Service/**/*.cc",
+    "Service/**/*.cpp",
+    "Service/**/*.cxx",
+]
+DEFAULT_LINT_EXCLUDE = [
+    "Drivers/**",
+    "Middlewares/**",
+    "build/**",
+]
+LAUNCH_CONFIGURATION_NAME = "Debug STM32 (OpenOCD)"
 DIAGNOSTIC_PATTERNS = [
     re.compile(
         r'(?P<path>[A-Za-z]:[\\/][^\r\n:]+?|[^:\r\n]+?\.[A-Za-z0-9_]+):'
@@ -38,6 +127,16 @@ DIAGNOSTIC_PATTERNS = [
         r'File\s+"(?P<path>[^"]+)",\s+line\s+(?P<line>\d+)(?:,\s+in\s+[^\r\n]+)?\s*\r?\n(?P<message>[^\r\n]+)'
     ),
 ]
+ANSI_RESET = "\033[0m"
+ANSI_COLORS = {
+    "red": "\033[31m",
+    "green": "\033[32m",
+    "yellow": "\033[33m",
+    "blue": "\033[34m",
+    "magenta": "\033[35m",
+    "cyan": "\033[36m",
+    "bold": "\033[1m",
+}
 
 
 def _enable_windows_virtual_terminal() -> None:
@@ -65,168 +164,44 @@ def repo_root() -> Path:
     return REPO_ROOT
 
 
-def config_error(path: str, message: str) -> RuntimeError:
-    location = path or "config"
-    return RuntimeError(f"Invalid local CI config at '{location}': {message}")
-
-
-def require_mapping(value: Any, path: str) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        raise config_error(path, "expected an object")
-    return value
-
-
-def optional_mapping(mapping: dict[str, Any], key: str, path: str) -> dict[str, Any]:
-    value = mapping.get(key)
-    if value is None:
-        return {}
-    if not isinstance(value, dict):
-        raise config_error(path, "expected an object")
-    return value
-
-
-def optional_string(mapping: dict[str, Any], key: str, path: str, default: str | None = None) -> str | None:
-    value = mapping.get(key)
-    if value is None:
-        return default
-    if not isinstance(value, str) or not value.strip():
-        raise config_error(path, "expected a non-empty string")
-    return value.strip()
-
-
-def optional_string_list(mapping: dict[str, Any], key: str, path: str, default: list[str] | None = None) -> list[str]:
-    value = mapping.get(key)
-    if value is None:
-        return list(default or [])
-    if not isinstance(value, list):
-        raise config_error(path, "expected an array of strings")
-
-    result: list[str] = []
-    for index, item in enumerate(value):
-        if not isinstance(item, str) or not item.strip():
-            raise config_error(f"{path}[{index}]", "expected a non-empty string")
-        result.append(item.strip())
-    return result
-
-
-def normalize_loaded_config(raw: dict[str, Any]) -> dict[str, Any]:
-    version = raw.get("version")
-    if not isinstance(version, int) or version < 1:
-        raise config_error("version", "expected an integer greater than or equal to 1")
-
-    project_raw = optional_mapping(raw, "project", "project")
-    project_name = optional_string(project_raw, "name", "project.name")
-
-    build_raw = optional_mapping(raw, "build", "build")
-    build_root_value = optional_string(build_raw, "root", "build.root", "build")
-    presets_raw = optional_mapping(build_raw, "presets", "build.presets")
-    debug_preset = optional_string(presets_raw, "debug", "build.presets.debug", "Debug")
-    release_preset = optional_string(presets_raw, "release", "build.presets.release", "Release")
-
-    artifacts_raw = optional_mapping(raw, "artifacts", "artifacts")
-    artifact_base = optional_string(artifacts_raw, "base_name", "artifacts.base_name")
-    formats = optional_string_list(artifacts_raw, "generated_formats", "artifacts.generated_formats", ["bin", "hex"])
-    invalid_formats = [item for item in formats if item not in {"bin", "hex"}]
-    if invalid_formats:
-        allowed = ", ".join(sorted({"bin", "hex"}))
-        invalid = ", ".join(invalid_formats)
-        raise config_error("artifacts.generated_formats", f"unsupported format(s): {invalid}. Allowed values: {allowed}")
-
-    quality_raw = optional_mapping(raw, "quality", "quality")
-    format_raw = optional_mapping(quality_raw, "format", "quality.format")
-    lint_raw = optional_mapping(quality_raw, "lint", "quality.lint")
-
-    flash_raw = optional_mapping(raw, "flash", "flash")
-    default_preset = optional_string(flash_raw, "default_preset", "flash.default_preset", "Debug")
-    if default_preset not in {"Debug", "Release"}:
-        raise config_error("flash.default_preset", "expected 'Debug' or 'Release'")
-    interface_cfg = optional_string(flash_raw, "interface_cfg", "flash.interface_cfg")
-    target_cfg = optional_string(flash_raw, "target_cfg", "flash.target_cfg")
-
-    hooks_raw = optional_mapping(raw, "hooks", "hooks")
-    pre_commit_raw = optional_mapping(hooks_raw, "pre_commit", "hooks.pre_commit")
-
-    return {
-        "version": version,
-        "project": {
-            "name": project_name,
-        },
-        "build": {
-            "root": build_root_value,
-            "presets": {
-                "debug": debug_preset,
-                "release": release_preset,
-            },
-        },
-        "artifacts": {
-            "base_name": artifact_base,
-            "generated_formats": formats,
-        },
-        "quality": {
-            "format": {
-                "include": optional_string_list(format_raw, "include", "quality.format.include"),
-                "exclude": optional_string_list(format_raw, "exclude", "quality.format.exclude"),
-            },
-            "lint": {
-                "include": optional_string_list(lint_raw, "include", "quality.lint.include"),
-                "exclude": optional_string_list(lint_raw, "exclude", "quality.lint.exclude"),
-            },
-        },
-        "flash": {
-            "default_preset": default_preset,
-            "interface_cfg": interface_cfg,
-            "target_cfg": target_cfg,
-        },
-        "hooks": {
-            "pre_commit": {
-                "json_validate": optional_string_list(
-                    pre_commit_raw,
-                    "json_validate",
-                    "hooks.pre_commit.json_validate",
-                    ["CMakePresets.json", ".vscode/*.json", ".local-ci/config.json"],
-                )
-            }
-        },
-    }
-
-
-def load_config() -> dict[str, Any]:
-    global _CONFIG_CACHE
-    if _CONFIG_CACHE is not None:
-        return _CONFIG_CACHE
-    if not CONFIG_PATH.is_file():
-        raise RuntimeError(f"Local CI config not found: {CONFIG_PATH}")
+def read_json_file(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
     try:
-        raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise RuntimeError(
-            f"Invalid JSON in {CONFIG_PATH}: {exc.msg} (line {exc.lineno}, column {exc.colno})"
-        ) from exc
-    _CONFIG_CACHE = normalize_loaded_config(require_mapping(raw, "config"))
-    return _CONFIG_CACHE
+        raise RuntimeError(f"Invalid JSON in {path}: {exc.msg} (line {exc.lineno}, column {exc.colno})") from exc
+    if not isinstance(value, dict):
+        raise RuntimeError(f"Expected a JSON object in {path}.")
+    return value
 
 
-def run_command(
-    command: list[str],
-    *,
-    cwd: Path | None = None,
-    check: bool = True,
-    capture_output: bool = False,
-) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(
-        command,
-        cwd=str(cwd or repo_root()),
-        check=False,
-        capture_output=capture_output,
-        text=True,
-    )
-    if check and result.returncode != 0:
-        if result.stdout:
-            print(result.stdout, end="")
-        if result.stderr:
-            print(result.stderr, end="", file=sys.stderr)
-        raise subprocess.CalledProcessError(result.returncode, command, result.stdout, result.stderr)
-    return result
+def load_launch_json() -> dict[str, Any]:
+    global _LAUNCH_CACHE
+    if _LAUNCH_CACHE is not None:
+        return _LAUNCH_CACHE
+    value = read_json_file(LAUNCH_PATH)
+    _LAUNCH_CACHE = value or {}
+    return _LAUNCH_CACHE
+
+
+def launch_configuration(name: str = LAUNCH_CONFIGURATION_NAME) -> dict[str, Any] | None:
+    launch = load_launch_json()
+    configurations = launch.get("configurations", [])
+    if not isinstance(configurations, list):
+        return None
+    for item in configurations:
+        if isinstance(item, dict) and item.get("name") == name:
+            return item
+    return None
+
+
+def template_version() -> str:
+    raw = read_json_file(TEMPLATE_VERSION_PATH)
+    if not raw:
+        return "unknown"
+    value = raw.get("template_version")
+    return value.strip() if isinstance(value, str) and value.strip() else "unknown"
 
 
 def supports_color() -> bool:
@@ -264,8 +239,7 @@ def print_error(message: str) -> None:
 
 
 def print_section(title: str) -> None:
-    line = f"== {title} =="
-    print_line(colorize(line, "blue"))
+    print_line(colorize(f"== {title} ==", "blue"))
 
 
 def print_summary(message: str) -> None:
@@ -290,8 +264,19 @@ def format_command(command: Iterable[str]) -> str:
 
 
 def combine_process_output(stdout: str | None, stderr: str | None) -> str:
-    sections = [text for text in (stdout, stderr) if text]
-    return "\n".join(sections)
+    return "\n".join([text for text in (stdout, stderr) if text])
+
+
+def normalize_repo_path(path: str | Path) -> str:
+    value = str(path).replace("\\", "/")
+    while value.startswith("./"):
+        value = value[2:]
+    return value.lstrip("/")
+
+
+def relative_repo_path(path: str | Path) -> str:
+    absolute = Path(path).resolve()
+    return normalize_repo_path(absolute.relative_to(repo_root()))
 
 
 def diagnostic_path(path_text: str) -> str:
@@ -326,40 +311,41 @@ def print_failure_summary(
     print_error(f"[error] stage={stage}")
     if command:
         print_error(f"[error] command={format_command(command)}")
-
     diagnostic = first_diagnostic(combine_process_output(stdout, stderr))
     if not diagnostic:
         return
-
     print_error(f"[error] file={diagnostic['path']}")
     if diagnostic.get("line") and diagnostic.get("column"):
         print_error(f"[error] location={diagnostic['line']}:{diagnostic['column']}")
     elif diagnostic.get("line"):
         print_error(f"[error] line={diagnostic['line']}")
-
     if diagnostic.get("severity"):
         print_error(f"[error] severity={diagnostic['severity']}")
     if diagnostic.get("message"):
         print_error(f"[error] message={diagnostic['message']}")
 
 
-def get_optional(mapping: dict[str, Any] | None, key: str, default: Any = None) -> Any:
-    if mapping is None:
-        return default
-    value = mapping.get(key, default)
-    return default if value is None else value
-
-
-def normalize_repo_path(path: str | Path) -> str:
-    value = str(path).replace("\\", "/")
-    while value.startswith("./"):
-        value = value[2:]
-    return value.lstrip("/")
-
-
-def relative_repo_path(path: str | Path) -> str:
-    absolute = Path(path).resolve()
-    return normalize_repo_path(absolute.relative_to(repo_root()))
+def run_command(
+    command: list[str],
+    *,
+    cwd: Path | None = None,
+    check: bool = True,
+    capture_output: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(
+        command,
+        cwd=str(cwd or repo_root()),
+        check=False,
+        capture_output=capture_output,
+        text=True,
+    )
+    if check and result.returncode != 0:
+        if result.stdout:
+            print(result.stdout, end="")
+        if result.stderr:
+            print(result.stderr, end="", file=sys.stderr)
+        raise subprocess.CalledProcessError(result.returncode, command, result.stdout, result.stderr)
+    return result
 
 
 def resolve_tool_path(env_var: str, command_names: Iterable[str], description: str) -> str:
@@ -385,7 +371,10 @@ def resolve_tool_path(env_var: str, command_names: Iterable[str], description: s
 
 
 def project_name_from_cmakelists() -> str:
-    cmake_lists = (repo_root() / "CMakeLists.txt").read_text(encoding="utf-8")
+    cmake_lists_path = repo_root() / "CMakeLists.txt"
+    if not cmake_lists_path.is_file():
+        raise RuntimeError("Unable to determine project name because CMakeLists.txt was not found.")
+    cmake_lists = cmake_lists_path.read_text(encoding="utf-8")
     match = re.search(r"set\s*\(\s*CMAKE_PROJECT_NAME\s+([A-Za-z0-9_]+)\s*\)", cmake_lists)
     if not match:
         match = re.search(r"project\s*\(\s*([A-Za-z0-9_]+)", cmake_lists)
@@ -395,31 +384,40 @@ def project_name_from_cmakelists() -> str:
 
 
 def configured_project_name() -> str:
-    config = load_config()
-    project = get_optional(config, "project", {})
-    return get_optional(project, "name", project_name_from_cmakelists())
-
-
-def build_config() -> dict[str, Any]:
-    return get_optional(load_config(), "build", {})
+    try:
+        return project_name_from_cmakelists()
+    except Exception:
+        return repo_root().name
 
 
 def logical_preset_name(preset: str) -> str:
-    presets = get_optional(build_config(), "presets", {})
-    return get_optional(presets, preset.lower(), preset)
+    return PRESET_NAMES.get(preset.lower(), preset)
 
 
 def build_root() -> str:
-    return normalize_repo_path(get_optional(build_config(), "root", "build"))
+    return BUILD_ROOT
 
 
 def build_dir(preset: str) -> Path:
-    return repo_root() / build_root() / logical_preset_name(preset)
+    return repo_root() / BUILD_ROOT / logical_preset_name(preset)
+
+
+def extract_artifact_base_name_from_launch() -> str | None:
+    configuration = launch_configuration()
+    if not configuration:
+        return None
+    executable = configuration.get("executable")
+    if not isinstance(executable, str) or not executable.strip():
+        return None
+    normalized = executable.replace("\\", "/").strip()
+    file_name = normalized.rsplit("/", 1)[-1]
+    if file_name.endswith(".elf"):
+        return Path(file_name).stem
+    return None
 
 
 def artifact_base_name() -> str:
-    artifacts = get_optional(load_config(), "artifacts", {})
-    return get_optional(artifacts, "base_name", configured_project_name())
+    return extract_artifact_base_name_from_launch() or configured_project_name()
 
 
 def artifact_path(preset: str, extension: str) -> Path:
@@ -427,9 +425,7 @@ def artifact_path(preset: str, extension: str) -> Path:
 
 
 def generated_artifact_extensions() -> list[str]:
-    artifacts = get_optional(load_config(), "artifacts", {})
-    formats = list(get_optional(artifacts, "generated_formats", ["bin", "hex"]))
-    return [item for item in formats if item in {"bin", "hex"}]
+    return list(GENERATED_FORMATS)
 
 
 def expected_artifact_extensions() -> list[str]:
@@ -449,7 +445,6 @@ def glob_to_regex(pattern: str) -> re.Pattern[str]:
             parts.append(".*")
             index += 2
             continue
-
         char = normalized[index]
         if char == "*":
             parts.append("[^/]*")
@@ -458,7 +453,6 @@ def glob_to_regex(pattern: str) -> re.Pattern[str]:
         else:
             parts.append(re.escape(char))
         index += 1
-
     parts.append("$")
     return re.compile("".join(parts))
 
@@ -485,7 +479,6 @@ def git_has_head() -> bool:
 def changed_repo_paths() -> list[str]:
     if not git_has_head():
         return repo_candidate_paths()
-
     tracked = run_command(
         ["git", "diff", "--name-only", "--diff-filter=ACMR", "HEAD", "--"],
         capture_output=True,
@@ -494,20 +487,23 @@ def changed_repo_paths() -> list[str]:
         ["git", "ls-files", "--others", "--exclude-standard", "--full-name", "--"],
         capture_output=True,
     )
-
     paths = [normalize_repo_path(line) for line in tracked.stdout.splitlines() if line.strip()]
     paths.extend(normalize_repo_path(line) for line in untracked.stdout.splitlines() if line.strip())
     return sorted(set(paths))
 
 
-def quality_scope_config(scope: str) -> dict[str, Any]:
-    quality = get_optional(load_config(), "quality", {})
-    return get_optional(quality, scope, {})
-
-
 def quality_patterns(scope: str, kind: str) -> list[str]:
-    patterns = get_optional(quality_scope_config(scope), kind, [])
-    return [normalize_repo_path(item) for item in patterns if str(item).strip()]
+    if scope == "format":
+        defaults = {
+            "include": DEFAULT_FORMAT_INCLUDE,
+            "exclude": DEFAULT_FORMAT_EXCLUDE,
+        }
+    else:
+        defaults = {
+            "include": DEFAULT_LINT_INCLUDE,
+            "exclude": DEFAULT_LINT_EXCLUDE,
+        }
+    return [normalize_repo_path(item) for item in defaults.get(kind, [])]
 
 
 def managed_repo_paths(scope: str) -> list[str]:
@@ -515,7 +511,6 @@ def managed_repo_paths(scope: str) -> list[str]:
     exclude_patterns = quality_patterns(scope, "exclude")
     if not include_patterns:
         return []
-
     matches: list[str] = []
     for candidate in repo_candidate_paths():
         if not matches_any_pattern(candidate, include_patterns):
@@ -533,7 +528,6 @@ def changed_managed_repo_paths(scope: str) -> list[str]:
     exclude_patterns = quality_patterns(scope, "exclude")
     if not include_patterns:
         return []
-
     matches: list[str] = []
     for candidate in changed_repo_paths():
         if not matches_any_pattern(candidate, include_patterns):
@@ -577,15 +571,11 @@ def staged_files() -> list[str]:
 
 
 def json_validation_patterns() -> list[str]:
-    hooks = get_optional(load_config(), "hooks", {})
-    pre_commit = get_optional(hooks, "pre_commit", {})
-    patterns = get_optional(pre_commit, "json_validate", ["CMakePresets.json", ".vscode/*.json", ".local-ci/config.json"])
-    return [normalize_repo_path(item) for item in patterns if str(item).strip()]
+    return [normalize_repo_path(item) for item in DEFAULT_JSON_VALIDATE_PATTERNS]
 
 
 def is_json_validation_path(repo_relative_path: str) -> bool:
-    patterns = json_validation_patterns()
-    return bool(patterns) and matches_any_pattern(repo_relative_path, patterns)
+    return matches_any_pattern(repo_relative_path, json_validation_patterns())
 
 
 def cmake_configure(preset: str) -> None:
@@ -607,7 +597,6 @@ def ensure_firmware_artifacts(preset: str) -> None:
     elf = artifact_path(preset, "elf")
     if not elf.is_file():
         raise RuntimeError(f"ELF not found for preset '{preset}': {elf}")
-
     objcopy = resolve_tool_path("ARM_NONE_EABI_OBJCOPY", ["arm-none-eabi-objcopy"], "GNU Arm Embedded objcopy")
     for extension in generated_artifact_extensions():
         fmt = "ihex" if extension == "hex" else "binary"
@@ -621,15 +610,46 @@ def assert_expected_artifacts_exist(preset: str) -> None:
             raise RuntimeError(f"Expected artifact missing for preset '{preset}': {path}")
 
 
+def extract_openocd_cfg(config_entry: str, category: str) -> str | None:
+    normalized = config_entry.replace("\\", "/").strip()
+    match = re.search(rf"({category}/.+)$", normalized, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return match.group(1)
+
+
+def launch_openocd_cfg(category: str) -> str | None:
+    configuration = launch_configuration()
+    if not configuration:
+      return None
+    config_files = configuration.get("configFiles", [])
+    if not isinstance(config_files, list):
+        return None
+    for entry in config_files:
+        if not isinstance(entry, str):
+            continue
+        resolved = extract_openocd_cfg(entry, category)
+        if resolved:
+            return resolved
+    return None
+
+
 def flash_config_value(name: str, default: Any = None) -> Any:
-    flash = get_optional(load_config(), "flash", {})
-    return get_optional(flash, name, default)
+    if name == "default_preset":
+        return "Debug"
+    if name == "interface_cfg":
+        return launch_openocd_cfg("interface") or default
+    if name == "target_cfg":
+        return launch_openocd_cfg("target") or default
+    return default
 
 
 def required_flash_config_value(name: str) -> str:
     value = flash_config_value(name)
     if not isinstance(value, str) or not value.strip():
-        raise config_error(f"flash.{name}", "expected a non-empty string")
+        raise RuntimeError(
+            f"Missing flash setting '{name}'. Please update '.vscode/launch.json' in the 'Debug STM32 (OpenOCD)' configuration."
+        )
     return value.strip()
 
 
@@ -640,7 +660,6 @@ def openocd_scripts_root(openocd_path: str) -> Path | None:
         if not path.exists():
             raise RuntimeError(f"OPENOCD_SCRIPTS does not exist: {path}. {DEVENV_INSTALL_HINT}")
         return path.resolve()
-
     derived = Path(openocd_path).resolve().parent / ".." / "share" / "openocd" / "scripts"
     derived = derived.resolve()
     return derived if derived.exists() else None
@@ -651,14 +670,12 @@ def resolve_openocd_config(openocd_path: str, env_var: str, relative_default: st
     if env_value:
         candidate = Path(env_value).expanduser()
         return str(candidate.resolve()) if candidate.exists() else env_value
-
     if relative_default:
         scripts_root = openocd_scripts_root(openocd_path)
         if scripts_root:
             candidate = (scripts_root / relative_default).resolve()
             if candidate.exists():
                 return str(candidate)
-
     raise RuntimeError(f"Unable to locate {description}. Set {env_var} or OPENOCD_SCRIPTS. {DEVENV_INSTALL_HINT}")
 
 
@@ -670,7 +687,6 @@ def clean_build_directories() -> None:
             directory.relative_to(root)
         except ValueError as exc:
             raise RuntimeError(f"Refusing to delete path outside repository root: {directory}") from exc
-
         if directory.exists():
             shutil.rmtree(directory)
             print_success(f"[clean] Removed {directory}")
@@ -683,16 +699,13 @@ def size_summary(preset: str) -> dict[str, Any]:
     elf = artifact_path(preset, "elf")
     if not elf.is_file():
         raise RuntimeError(f"ELF not found for preset '{preset}': {elf}. Run the matching build first.")
-
     result = run_command([size_tool, str(elf)], capture_output=True)
     lines = [line for line in result.stdout.splitlines() if line.strip()]
     if len(lines) < 2:
         raise RuntimeError("Unexpected arm-none-eabi-size output.")
-
     values = [item for item in lines[-1].split() if item]
     if len(values) < 5:
         raise RuntimeError("Unable to parse arm-none-eabi-size output.")
-
     text_size = int(values[0])
     data_size = int(values[1])
     bss_size = int(values[2])

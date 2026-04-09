@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from common import (
-    CONFIG_PATH,
     configured_project_name,
     print_info,
     print_section,
@@ -13,6 +12,8 @@ from common import (
     python_executable,
     resolve_tool_path,
     run_command,
+    template_version,
+    TEMPLATE_VERSION_PATH,
 )
 
 
@@ -33,7 +34,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ("lefthook", resolve_tool_path("LEFTHOOK", ["lefthook"], "lefthook")),
     ]
 
-    print_info(f"[init] Local CI config: {CONFIG_PATH}")
+    print_info(f"[init] Template version: {template_version()} ({TEMPLATE_VERSION_PATH})")
     print_info(f"[init] Project name   : {configured_project_name()}")
     print_success("[init] Toolchain check passed:")
     for name, path in tools:
