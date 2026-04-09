@@ -50,7 +50,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print_warning("  openocd              optional (required for flash only)")
 
     lefthook = dict(tools)["lefthook"]
-    print_info("[init] Installing git hooks via lefthook...")
+    print_info("[init] Installing Lefthook hooks...")
     run_command([lefthook, "install"])
     print_summary("[init] Local CI bootstrap complete.")
     return 0

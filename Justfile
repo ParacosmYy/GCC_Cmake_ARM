@@ -3,7 +3,7 @@ set windows-shell := ["cmd.exe", "/Q", "/C"]
 
 python_cmd := if os_family() == "windows" { "py -3" } else { "python3" }
 
-init: # Validate local tools and install git hooks
+init: # Validate local tools and install Lefthook hooks
     @{{python_cmd}} Scripts/ci/main.py init
 
 configure: # Configure Debug and Release build directories

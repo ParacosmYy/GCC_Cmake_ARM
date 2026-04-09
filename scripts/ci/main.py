@@ -22,7 +22,7 @@ def main() -> int:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("init", help="Validate required tools and install git hooks.")
+    subparsers.add_parser("init", help="Validate required tools and install Lefthook hooks.")
 
     configure_parser = subparsers.add_parser("configure", help="Configure build directories.")
     configure_parser.add_argument("--preset", choices=["All", "Debug", "Release"], default="All")
