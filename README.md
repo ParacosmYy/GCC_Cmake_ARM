@@ -1,211 +1,116 @@
-# STM32 本地 CI 与代码框架说明
+# STM32 Local CI
 
-本仓库采用 Python 优先的本地 CI 方案，目标是同时服务于：
+这套仓库现在只保留一个文档入口，就是这份 `README.md`。
 
-- Windows 本地 GCC + CMake 开发
-- Linux 云端 CI
-- 团队统一的 VS Code 开发体验
-- 后续跨芯片项目复用
+## 1. 先准备环境
 
-## 企业标准入口
+团队统一做法是先运行：
 
-企业标准入口统一为：
-
-```bash
-python3 Scripts/ci/main.py <subcommand>
+```powershell
+powershell -ExecutionPolicy Bypass -File D:\DevEnv\install_env.ps1
 ```
 
-Windows 推荐写法：
+然后：
+
+1. 关闭所有终端和 VS Code
+2. 重新打开 VS Code 或终端
+3. 确认下面这些命令能直接找到
+
+```powershell
+cmake --version
+ninja --version
+clangd --version
+clang-format --version
+cppcheck --version
+arm-none-eabi-gcc --version
+arm-none-eabi-gdb --version
+openocd --version
+```
+
+再确认：
+
+```powershell
+echo $env:OPENOCD_SCRIPTS
+```
+
+## 2. 快速开始
+
+仓库标准入口固定为：
 
 ```powershell
 py -3 Scripts/ci/main.py <subcommand>
 ```
 
-常用示例：
+最常用的命令只有这些：
 
 ```powershell
 py -3 Scripts/ci/main.py init
 py -3 Scripts/ci/main.py build --preset Debug
 py -3 Scripts/ci/main.py check
-py -3 Scripts/ci/main.py check --mode full
+py -3 Scripts/ci/main.py check --full
 py -3 Scripts/ci/main.py flash
 ```
 
-## 分层说明
-
-- 标准入口：`Scripts/ci/main.py`
-- 开发者快捷层：`just ...`
-- Hook 管理：`lefthook`
-- IDE 便利层：VS Code Task
-
-注意：
-
-- 真正的 CI 逻辑只保留在 `Scripts/ci/*.py`
-- `just`、VS Code Task、hook 都只是外壳
-- 云端 CI 应直接调用 Python 标准入口
-
-## 目录约定
-
-除 CubeMX 生成内容外，手写代码统一放在以下目录：
-
-- `App/`：应用层流程与任务
-- `Bsp/`：板级支持与外设封装
-- `Service/`：可复用服务
-- `Config/`：项目配置
-- `Board/`：板卡差异与板级定义
-- `Scripts/`：CI、Hook 与开发自动化脚本
-
-CubeMX 生成目录保持原样：
-
-- `Core/`
-- `Drivers/`
-- `Middlewares/`
-
-## 本地 CI 当前拦截范围
-
-当前质量门会检查：
-
-- `App/`
-- `Bsp/`
-- `Service/`
-- `Config/`
-- `Board/`
-- `Scripts/` 下的 Python 脚本
-- 过渡期保留 `Core/Inc/main.h`
-- 过渡期保留 `Core/Src/main.c`
-
-当前检查项包括：
-
-- `pre-commit`
-  - staged diff whitespace / conflict 检查
-  - JSON 配置校验
-  - 对手写 C/C++ 文件执行 `clang-format`
-  - 对 `Scripts/` 下的 Python 脚本做语法校验
-- `pre-push`
-  - 执行完整 `check --mode full`
-- `check`
-  - `format --check`
-  - `lint`
-  - `python-check`
-  - `build Debug`
-  - `build Release`
-  - `size`
-
-## 本地快检与完整检查
-
-日常开发推荐：
-
-```powershell
-py -3 Scripts/ci/main.py check
-```
-
-说明：
-
-- 默认是本地快速模式
-- 优先检查变更过的手写 C/C++ 文件
-- 如果当前变更不涉及手写 C/C++，则跳过本地 `cppcheck`
-
-推送前或完整自检推荐：
-
-```powershell
-py -3 Scripts/ci/main.py check --mode full
-```
-
-## VS Code Task
-
-考虑到团队当前是 GCC 初始开发团队，仓库保留了精简的 VS Code Task：
+VS Code 里对应的 Task 只保留：
 
 - `ci: init`
 - `ci: build`
-- `ci: build-release`
 - `ci: check`
-- `ci: check-full`
 - `ci: flash`
-- `ci: clean`
 
-说明：
+## 3. clangd / VS Code
 
-- 这些 Task 全部调用 `Scripts/ci/main.py`
-- `ci: build`、`ci: build-release`、`ci: check`、`ci: check-full` 已接入 `problemMatcher`
-- 构建、格式、静态检查中的关键报错会进入 VS Code `Problems` 面板
+当前仓库采用 `PATH` 模式，不再在仓库里写死 `D:\DevEnv\...` 绝对路径。
 
-## 团队工具目录约定
+工作区里只保留最小 VS Code 配置：
 
-团队当前统一约定工具目录为：
-
-```text
-D:\DevEnv
-```
-
-推荐结构：
-
-```text
-D:\DevEnv
-  cmake
-  ninja
-  llvm
-  cppcheck
-  lefthook
-  openocd
-  GNU-tools-for-STM32
-  just
-  git
-```
-
-`.vscode/settings.json` 当前按这一团队约定提供默认路径。
-
-## 哪些文件是通用的
-
-下面这些通常可以在 STM32 项目之间复用：
-
-- `Scripts/ci/*.py`
-- `Scripts/hooks/*.py`
-- `Justfile`
-- `lefthook.yml`
-- `.local-ci/config.schema.json`
 - `.vscode/tasks.json`
-
-## 哪些文件是项目级的
-
-下面这些通常需要项目负责人按项目修改：
-
-- `.local-ci/config.json`
-- `.vscode/settings.json`
 - `.vscode/launch.json`
-- `README.md`
-
-## 跨芯片复用建议
-
-换到 G4、F4 或其他 STM32 项目时，原则上优先只改：
-
-- `.local-ci/config.json`
 - `.vscode/settings.json`
-- `.vscode/launch.json`
 
-不应因为换芯片就重写：
+其中：
 
-- `Scripts/ci/*.py`
-- `Scripts/hooks/*.py`
+- `clangd.path = clangd`
+- `clangd` 通过 `build/Debug/compile_commands.json` 工作
+- `clangd` 通过 `--query-driver=**/arm-none-eabi-*` 识别 ARM GCC
+- 调试默认使用：
+  - `arm-none-eabi-gdb`
+  - `openocd`
+  - `OPENOCD_SCRIPTS`
 
-## 诊断与排障
+如果 `clangd` 没有头文件、跳转或补全，先不要改仓库路径，先确认：
 
-当前本地 CI 已具备这些诊断能力：
+1. `D:\DevEnv\install_env.ps1` 已跑过
+2. VS Code 已重开
+3. `clangd` 和 `arm-none-eabi-gcc` 都能在终端直接执行
+4. `build/Debug/compile_commands.json` 已存在
 
-- 标题、日志、警告、错误、成功、总结使用统一颜色语义
-- 失败时优先打印阶段信息
-- `format`、`lint`、`python-check` 失败时会输出文件与行号摘要
-- VS Code Task 会将 GCC 风格报错同步到 `Problems` 面板
+## 4. G4 / H7 迁移时改什么
 
-如果需要查看完整 Python traceback，可临时执行：
+迁移本地 CI 时，不要重写 `Scripts/ci`。
 
-```powershell
-$env:LOCAL_CI_TRACEBACK=1
-py -3 Scripts/ci/main.py check
-```
+通常只需要改项目层内容：
 
-## 更多说明
+1. `.local-ci/config.json`
+2. `.vscode/launch.json`
+3. `.ioc`
+4. CubeMX 生成层
+5. 启动文件和链接脚本
 
-详见：
+常见芯片 target：
 
-- `docs/local-ci-adoption.md`
-- `docs/new-hire-setup.md`
+- H7: `target/stm32h7x.cfg`
+- G4: `target/stm32g4x.cfg`
+
+## 5. Lefthook pre-commit
+
+当前默认只启用 `pre-commit`。
+
+它会做：
+
+- `git diff --cached --check`
+- JSON 校验
+- `Scripts/` 下 Python 语法检查
+- 对 staged 的手写 C/C++ 文件执行 `clang-format`
+
+不默认启用 `pre-push`。
