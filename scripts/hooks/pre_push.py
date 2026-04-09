@@ -11,8 +11,8 @@ from common import python_executable, run_command  # noqa: E402
 
 
 def main() -> int:
-    print("[pre-push] Running full local CI via Scripts/ci/main.py check --mode full...")
-    run_command([python_executable(), str(CI_DIR / "main.py"), "check", "--mode", "full"])
+    print("[pre-push] Running optional full local CI via Scripts/ci/main.py check --full...")
+    run_command([python_executable(), str(CI_DIR / "main.py"), "check", "--full"])
     print("[pre-push] Full local CI passed.")
     return 0
 
