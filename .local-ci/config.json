@@ -1,5 +1,4 @@
 {
-  "$schema": "./config.schema.json",
   "version": 1,
   "project": {
     "name": "TEST_VSCODE_LPUART1_2"
@@ -111,7 +110,7 @@
       "json_validate": [
         "CMakePresets.json",
         ".vscode/*.json",
-        ".local-ci/*.json"
+        ".local-ci/config.json"
       ]
     }
   }

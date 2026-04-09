@@ -13,6 +13,8 @@ from typing import Any, Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = REPO_ROOT / ".local-ci" / "config.json"
+_CONFIG_CACHE: dict[str, Any] | None = None
+DEVENV_INSTALL_HINT = r"Run D:\DevEnv\install_env.ps1, reopen your terminal or VS Code, then try again."
 ANSI_RESET = "\033[0m"
 ANSI_COLORS = {
     "red": "\033[31m",
@@ -63,10 +65,145 @@ def repo_root() -> Path:
     return REPO_ROOT
 
 
+def config_error(path: str, message: str) -> RuntimeError:
+    location = path or "config"
+    return RuntimeError(f"Invalid local CI config at '{location}': {message}")
+
+
+def require_mapping(value: Any, path: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise config_error(path, "expected an object")
+    return value
+
+
+def optional_mapping(mapping: dict[str, Any], key: str, path: str) -> dict[str, Any]:
+    value = mapping.get(key)
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise config_error(path, "expected an object")
+    return value
+
+
+def optional_string(mapping: dict[str, Any], key: str, path: str, default: str | None = None) -> str | None:
+    value = mapping.get(key)
+    if value is None:
+        return default
+    if not isinstance(value, str) or not value.strip():
+        raise config_error(path, "expected a non-empty string")
+    return value.strip()
+
+
+def optional_string_list(mapping: dict[str, Any], key: str, path: str, default: list[str] | None = None) -> list[str]:
+    value = mapping.get(key)
+    if value is None:
+        return list(default or [])
+    if not isinstance(value, list):
+        raise config_error(path, "expected an array of strings")
+
+    result: list[str] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, str) or not item.strip():
+            raise config_error(f"{path}[{index}]", "expected a non-empty string")
+        result.append(item.strip())
+    return result
+
+
+def normalize_loaded_config(raw: dict[str, Any]) -> dict[str, Any]:
+    version = raw.get("version")
+    if not isinstance(version, int) or version < 1:
+        raise config_error("version", "expected an integer greater than or equal to 1")
+
+    project_raw = optional_mapping(raw, "project", "project")
+    project_name = optional_string(project_raw, "name", "project.name")
+
+    build_raw = optional_mapping(raw, "build", "build")
+    build_root_value = optional_string(build_raw, "root", "build.root", "build")
+    presets_raw = optional_mapping(build_raw, "presets", "build.presets")
+    debug_preset = optional_string(presets_raw, "debug", "build.presets.debug", "Debug")
+    release_preset = optional_string(presets_raw, "release", "build.presets.release", "Release")
+
+    artifacts_raw = optional_mapping(raw, "artifacts", "artifacts")
+    artifact_base = optional_string(artifacts_raw, "base_name", "artifacts.base_name")
+    formats = optional_string_list(artifacts_raw, "generated_formats", "artifacts.generated_formats", ["bin", "hex"])
+    invalid_formats = [item for item in formats if item not in {"bin", "hex"}]
+    if invalid_formats:
+        allowed = ", ".join(sorted({"bin", "hex"}))
+        invalid = ", ".join(invalid_formats)
+        raise config_error("artifacts.generated_formats", f"unsupported format(s): {invalid}. Allowed values: {allowed}")
+
+    quality_raw = optional_mapping(raw, "quality", "quality")
+    format_raw = optional_mapping(quality_raw, "format", "quality.format")
+    lint_raw = optional_mapping(quality_raw, "lint", "quality.lint")
+
+    flash_raw = optional_mapping(raw, "flash", "flash")
+    default_preset = optional_string(flash_raw, "default_preset", "flash.default_preset", "Debug")
+    if default_preset not in {"Debug", "Release"}:
+        raise config_error("flash.default_preset", "expected 'Debug' or 'Release'")
+    interface_cfg = optional_string(flash_raw, "interface_cfg", "flash.interface_cfg")
+    target_cfg = optional_string(flash_raw, "target_cfg", "flash.target_cfg")
+
+    hooks_raw = optional_mapping(raw, "hooks", "hooks")
+    pre_commit_raw = optional_mapping(hooks_raw, "pre_commit", "hooks.pre_commit")
+
+    return {
+        "version": version,
+        "project": {
+            "name": project_name,
+        },
+        "build": {
+            "root": build_root_value,
+            "presets": {
+                "debug": debug_preset,
+                "release": release_preset,
+            },
+        },
+        "artifacts": {
+            "base_name": artifact_base,
+            "generated_formats": formats,
+        },
+        "quality": {
+            "format": {
+                "include": optional_string_list(format_raw, "include", "quality.format.include"),
+                "exclude": optional_string_list(format_raw, "exclude", "quality.format.exclude"),
+            },
+            "lint": {
+                "include": optional_string_list(lint_raw, "include", "quality.lint.include"),
+                "exclude": optional_string_list(lint_raw, "exclude", "quality.lint.exclude"),
+            },
+        },
+        "flash": {
+            "default_preset": default_preset,
+            "interface_cfg": interface_cfg,
+            "target_cfg": target_cfg,
+        },
+        "hooks": {
+            "pre_commit": {
+                "json_validate": optional_string_list(
+                    pre_commit_raw,
+                    "json_validate",
+                    "hooks.pre_commit.json_validate",
+                    ["CMakePresets.json", ".vscode/*.json", ".local-ci/config.json"],
+                )
+            }
+        },
+    }
+
+
 def load_config() -> dict[str, Any]:
+    global _CONFIG_CACHE
+    if _CONFIG_CACHE is not None:
+        return _CONFIG_CACHE
     if not CONFIG_PATH.is_file():
         raise RuntimeError(f"Local CI config not found: {CONFIG_PATH}")
-    return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    try:
+        raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Invalid JSON in {CONFIG_PATH}: {exc.msg} (line {exc.lineno}, column {exc.colno})"
+        ) from exc
+    _CONFIG_CACHE = normalize_loaded_config(require_mapping(raw, "config"))
+    return _CONFIG_CACHE
 
 
 def run_command(
@@ -234,7 +371,7 @@ def resolve_tool_path(env_var: str, command_names: Iterable[str], description: s
         located = shutil.which(env_value)
         if located:
             return located
-        raise RuntimeError(f"{description} not found via {env_var}={env_value}.")
+        raise RuntimeError(f"{description} not found via {env_var}={env_value}. {DEVENV_INSTALL_HINT}")
 
     for command_name in command_names:
         located = shutil.which(command_name)
@@ -242,7 +379,9 @@ def resolve_tool_path(env_var: str, command_names: Iterable[str], description: s
             return located
 
     choices = ", ".join(command_names)
-    raise RuntimeError(f"{description} not found. Set {env_var} or add one of these commands to PATH: {choices}")
+    raise RuntimeError(
+        f"{description} not found. Set {env_var} or add one of these commands to PATH: {choices}. {DEVENV_INSTALL_HINT}"
+    )
 
 
 def project_name_from_cmakelists() -> str:
@@ -440,7 +579,7 @@ def staged_files() -> list[str]:
 def json_validation_patterns() -> list[str]:
     hooks = get_optional(load_config(), "hooks", {})
     pre_commit = get_optional(hooks, "pre_commit", {})
-    patterns = get_optional(pre_commit, "json_validate", ["CMakePresets.json", ".vscode/*.json", ".local-ci/*.json"])
+    patterns = get_optional(pre_commit, "json_validate", ["CMakePresets.json", ".vscode/*.json", ".local-ci/config.json"])
     return [normalize_repo_path(item) for item in patterns if str(item).strip()]
 
 
@@ -487,12 +626,19 @@ def flash_config_value(name: str, default: Any = None) -> Any:
     return get_optional(flash, name, default)
 
 
+def required_flash_config_value(name: str) -> str:
+    value = flash_config_value(name)
+    if not isinstance(value, str) or not value.strip():
+        raise config_error(f"flash.{name}", "expected a non-empty string")
+    return value.strip()
+
+
 def openocd_scripts_root(openocd_path: str) -> Path | None:
     env_value = os.environ.get("OPENOCD_SCRIPTS", "").strip().strip('"')
     if env_value:
         path = Path(env_value).expanduser()
         if not path.exists():
-            raise RuntimeError(f"OPENOCD_SCRIPTS does not exist: {path}")
+            raise RuntimeError(f"OPENOCD_SCRIPTS does not exist: {path}. {DEVENV_INSTALL_HINT}")
         return path.resolve()
 
     derived = Path(openocd_path).resolve().parent / ".." / "share" / "openocd" / "scripts"
@@ -513,7 +659,7 @@ def resolve_openocd_config(openocd_path: str, env_var: str, relative_default: st
             if candidate.exists():
                 return str(candidate)
 
-    raise RuntimeError(f"Unable to locate {description}. Set {env_var} or OPENOCD_SCRIPTS.")
+    raise RuntimeError(f"Unable to locate {description}. Set {env_var} or OPENOCD_SCRIPTS. {DEVENV_INSTALL_HINT}")
 
 
 def clean_build_directories() -> None:
