@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project": {
-    "name": "TEST_VSCODE_LPUART1_2"
+    "name": "__PROJECT_NAME__"
   },
   "build": {
     "root": "build",
@@ -11,7 +11,7 @@
     }
   },
   "artifacts": {
-    "base_name": "TEST_VSCODE_LPUART1_2",
+    "base_name": "__ARTIFACT_BASE_NAME__",
     "generated_formats": [
       "bin",
       "hex"
@@ -28,22 +28,6 @@
         "App/**/*.hh",
         "App/**/*.hpp",
         "App/**/*.hxx",
-        "Bsp/**/*.c",
-        "Bsp/**/*.cc",
-        "Bsp/**/*.cpp",
-        "Bsp/**/*.cxx",
-        "Bsp/**/*.h",
-        "Bsp/**/*.hh",
-        "Bsp/**/*.hpp",
-        "Bsp/**/*.hxx",
-        "Service/**/*.c",
-        "Service/**/*.cc",
-        "Service/**/*.cpp",
-        "Service/**/*.cxx",
-        "Service/**/*.h",
-        "Service/**/*.hh",
-        "Service/**/*.hpp",
-        "Service/**/*.hxx",
         "Board/**/*.c",
         "Board/**/*.cc",
         "Board/**/*.cpp",
@@ -52,6 +36,14 @@
         "Board/**/*.hh",
         "Board/**/*.hpp",
         "Board/**/*.hxx",
+        "Bsp/**/*.c",
+        "Bsp/**/*.cc",
+        "Bsp/**/*.cpp",
+        "Bsp/**/*.cxx",
+        "Bsp/**/*.h",
+        "Bsp/**/*.hh",
+        "Bsp/**/*.hpp",
+        "Bsp/**/*.hxx",
         "Config/**/*.c",
         "Config/**/*.cc",
         "Config/**/*.cpp",
@@ -60,8 +52,22 @@
         "Config/**/*.hh",
         "Config/**/*.hpp",
         "Config/**/*.hxx",
-        "Core/Inc/main.h",
-        "Core/Src/main.c"
+        "Core/**/*.c",
+        "Core/**/*.cc",
+        "Core/**/*.cpp",
+        "Core/**/*.cxx",
+        "Core/**/*.h",
+        "Core/**/*.hh",
+        "Core/**/*.hpp",
+        "Core/**/*.hxx",
+        "Service/**/*.c",
+        "Service/**/*.cc",
+        "Service/**/*.cpp",
+        "Service/**/*.cxx",
+        "Service/**/*.h",
+        "Service/**/*.hh",
+        "Service/**/*.hpp",
+        "Service/**/*.hxx"
       ],
       "exclude": [
         "Drivers/**",
@@ -75,23 +81,26 @@
         "App/**/*.cc",
         "App/**/*.cpp",
         "App/**/*.cxx",
-        "Bsp/**/*.c",
-        "Bsp/**/*.cc",
-        "Bsp/**/*.cpp",
-        "Bsp/**/*.cxx",
-        "Service/**/*.c",
-        "Service/**/*.cc",
-        "Service/**/*.cpp",
-        "Service/**/*.cxx",
         "Board/**/*.c",
         "Board/**/*.cc",
         "Board/**/*.cpp",
         "Board/**/*.cxx",
+        "Bsp/**/*.c",
+        "Bsp/**/*.cc",
+        "Bsp/**/*.cpp",
+        "Bsp/**/*.cxx",
         "Config/**/*.c",
         "Config/**/*.cc",
         "Config/**/*.cpp",
         "Config/**/*.cxx",
-        "Core/Src/main.c"
+        "Core/**/*.c",
+        "Core/**/*.cc",
+        "Core/**/*.cpp",
+        "Core/**/*.cxx",
+        "Service/**/*.c",
+        "Service/**/*.cc",
+        "Service/**/*.cpp",
+        "Service/**/*.cxx"
       ],
       "exclude": [
         "Drivers/**",
@@ -102,15 +111,15 @@
   },
   "flash": {
     "default_preset": "Debug",
-    "interface_cfg": "interface/cmsis-dap.cfg",
-    "target_cfg": "target/stm32h7x.cfg"
+    "interface_cfg": "__OPENOCD_INTERFACE_CFG__",
+    "target_cfg": "__OPENOCD_TARGET_CFG__"
   },
   "hooks": {
     "pre_commit": {
       "json_validate": [
         "CMakePresets.json",
         ".vscode/*.json",
-        ".local-ci/config.json"
+        ".local-ci/*.json"
       ]
     }
   }

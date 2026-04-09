@@ -7,16 +7,15 @@
             "request": "launch",
             "servertype": "openocd",
             "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/Debug/${workspaceFolderBasename}.elf",
+            "executable": "${workspaceFolder}/build/Debug/__ARTIFACT_BASE_NAME__.elf",
             "gdbPath": "arm-none-eabi-gdb",
             "serverpath": "openocd",
             "configFiles": [
-                "${env:OPENOCD_SCRIPTS}/interface/cmsis-dap.cfg",
-                "${env:OPENOCD_SCRIPTS}/target/stm32h7x.cfg"
+                "${env:OPENOCD_SCRIPTS}/__OPENOCD_INTERFACE_CFG__",
+                "${env:OPENOCD_SCRIPTS}/__OPENOCD_TARGET_CFG__"
             ],
             "preLaunchTask": "ci: build",
-            "runToEntryPoint": "main",
-            "rtos": "FreeRTOS"
+            "runToEntryPoint": "main"
         }
     ]
 }
