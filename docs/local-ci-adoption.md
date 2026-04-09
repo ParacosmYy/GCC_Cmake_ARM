@@ -2,7 +2,7 @@
 
 ## 目标
 
-在多个 STM32 项目之间复用同一套本地 CI 基座，同时保持 CubeMX 框架不被破坏。
+在多个 STM32 项目之间复用同一套本地 CI 基座，同时保持 CubeMX 生成框架不被破坏。
 
 ## 标准入口
 
@@ -18,13 +18,10 @@ Windows 对应：
 py -3 Scripts/ci/main.py <subcommand>
 ```
 
-本地推荐：
+推荐命令：
 
-- `py -3 Scripts/ci/main.py check`
-
-完整质量门：
-
-- `py -3 Scripts/ci/main.py check --mode full`
+- 本地快检：`py -3 Scripts/ci/main.py check`
+- 完整检查：`py -3 Scripts/ci/main.py check --mode full`
 
 ## 目录约定
 
@@ -34,7 +31,7 @@ CubeMX 生成内容：
 - `Drivers/`
 - `Middlewares/`
 
-用户自维护内容：
+手写代码与自动化脚本：
 
 - `App/`
 - `Bsp/`
@@ -43,9 +40,9 @@ CubeMX 生成内容：
 - `Board/`
 - `Scripts/`
 
-## 哪些文件是通用的
+## 通用文件
 
-下面这些通常可以跨 STM32 项目复用：
+下面这些通常可以直接在新项目中复用：
 
 - `Scripts/ci/*.py`
 - `Scripts/hooks/*.py`
@@ -54,42 +51,75 @@ CubeMX 生成内容：
 - `.local-ci/config.schema.json`
 - `.vscode/tasks.json`
 
-## 哪些文件是项目级的
+## 项目级文件
 
-下面这些通常需要按项目修改：
+下面这些通常需要按项目调整：
 
 - `.local-ci/config.json`
 - `.vscode/settings.json`
 - `.vscode/launch.json`
 - `README.md`
 
-## 项目最小修改面
+## 新项目最小修改面
 
-新项目接入时，优先只改：
+新项目接入时，优先只修改：
 
 - `.local-ci/config.json`
 - `.vscode/settings.json`
 - `.vscode/launch.json`
 
-## 本地 CI 当前拦截范围
+## `.local-ci/config.json` 主要修改点
 
-当前已经接入规范拦截的用户目录：
+按项目实际情况修改：
 
-- `App/`
-- `Bsp/`
-- `Service/`
-- `Config/`
-- `Board/`
-- `Scripts/` 中的 Python 脚本
+- `project.name`
+- `build.presets`
+- `artifacts.base_name`
+- `quality.format.include`
+- `quality.format.exclude`
+- `quality.lint.include`
+- `quality.lint.exclude`
+- `flash.interface_cfg`
+- `flash.target_cfg`
 
-过渡期保留：
+## `.vscode/settings.json` 主要修改点
 
-- `Core/Inc/main.h`
-- `Core/Src/main.c`
+按团队环境或项目差异修改：
+
+- `localCi.tools.*`
+- `localCi.debug.elfPath`
+- `localCi.debug.openocdInterfaceCfg`
+- `localCi.debug.openocdTargetCfg`
+
+## `.vscode/launch.json` 主要修改点
+
+通常只在调试策略变化时修改：
+
+- 调试器类型
+- `preLaunchTask`
+- RTOS 配置
 
 ## 本地与推送策略
 
-- 本地 `check` 默认使用更快的本地模式
-- 本地模式优先检查变更的手写 C/C++ 文件
-- 如果当前变更不涉及手写 C/C++，则跳过本地 `cppcheck`
-- `pre-push` 仍然执行完整模式，不降低最终质量门
+- 本地 `check` 默认使用快速模式
+- 快速模式优先检查变更过的手写 C/C++ 文件
+- 如果当前变更不涉及手写 C/C++，本地 `cppcheck` 会跳过
+- `pre-push` 仍执行 `check --mode full`
+
+## IDE 集成
+
+VS Code Task 只是便利层，不是标准入口。当前保留：
+
+- `ci: init`
+- `ci: build`
+- `ci: build-release`
+- `ci: check`
+- `ci: check-full`
+- `ci: flash`
+- `ci: clean`
+
+说明：
+
+- 所有 Task 都调用 `Scripts/ci/main.py`
+- 构建与检查任务已配置 `problemMatcher`
+- 报错会进入 `Problems` 面板，便于定位文件与行号
