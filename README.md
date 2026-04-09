@@ -53,7 +53,20 @@ echo $env:OPENOCD_SCRIPTS
 
 ## 2. 第一次接入现有项目
 
-在这个模板仓库里执行：
+新人推荐直接双击：
+
+```text
+install-local-ci.bat
+```
+
+它会交互式询问：
+
+- 目标 STM32 项目路径
+- 是否需要 `-Force`
+- `OpenOCD target cfg`
+- `OpenOCD interface cfg`
+
+如果你更习惯命令行，也可以在这个模板仓库里执行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-local-ci.ps1 -TargetProject <目标项目路径>
@@ -83,6 +96,7 @@ powershell -ExecutionPolicy Bypass -File .\install-local-ci.ps1 `
 - 强覆盖模板脚本层，并自动备份同名旧文件
 - `.vscode/*.json` 和 `.local-ci/config.json` 若已存在，会先备份再覆盖
 - 不复制、不覆盖任何项目层文件
+- `.ps1` 适合命令行使用，`install-local-ci.bat` 才是面向新人和双击场景的入口
 
 ## 3. 已接入项目如何升级模板层
 
