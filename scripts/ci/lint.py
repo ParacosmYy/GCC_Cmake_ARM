@@ -9,7 +9,15 @@ from common import (
     changed_repo_paths,
     changed_handmaintained_lint_files,
     cmake_configure,
+    format_duration,
     handmaintained_lint_files,
+    print_failure_summary,
+    print_error,
+    print_info,
+    print_section,
+    print_success,
+    print_summary,
+    print_warning,
     relative_repo_path,
     resolve_tool_path,
     run_command,
@@ -48,43 +56,55 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if not files:
         if selected_mode == "skip":
-            print("[lint] No changed hand-maintained C/C++ sources detected. Skipping local lint.")
+            print_warning("[lint] No changed hand-maintained C/C++ sources detected. Skipping local lint.")
         else:
-            print(f"[lint] No hand-maintained C/C++ sources found for mode '{selected_mode}'. Skipping.")
+            print_warning(f"[lint] No hand-maintained C/C++ sources found for mode '{selected_mode}'. Skipping.")
         return 0
 
     total_start = time.perf_counter()
-    print(f"[lint] Mode: {selected_mode}")
-    print(f"[lint] Running cppcheck on {len(files)} file(s).")
+    print_section("lint")
+    print_info(f"[lint] Mode: {selected_mode}")
+    print_info(f"[lint] Running cppcheck on {len(files)} file(s).")
     for index, path in enumerate(files, start=1):
         relative = relative_repo_path(path)
         file_start = time.perf_counter()
-        print(f"[lint] ({index}/{len(files)}) {relative}")
+        print_info(f"[lint] ({index}/{len(files)}) {relative}")
         try:
+            command = [
+                cppcheck,
+                f"--project={compile_commands}",
+                f"--file-filter=*{relative}",
+                "--template=gcc",
+                "--enable=warning,style,performance,portability",
+                "--inline-suppr",
+                "--force",
+                "--quiet",
+                "--std=c11",
+                "--suppress=missingIncludeSystem",
+                "--suppress=constParameterPointer",
+                "--suppress=*:*Drivers/*",
+                "--suppress=*:*Middlewares/*",
+                "--error-exitcode=1",
+            ]
             run_command(
-                [
-                    cppcheck,
-                    f"--project={compile_commands}",
-                    f"--file-filter=*{relative}",
-                    "--enable=warning,style,performance,portability",
-                    "--inline-suppr",
-                    "--force",
-                    "--quiet",
-                    "--std=c11",
-                    "--suppress=missingIncludeSystem",
-                    "--suppress=constParameterPointer",
-                    "--suppress=*:*Drivers/*",
-                    "--suppress=*:*Middlewares/*",
-                    "--error-exitcode=1",
-                ]
+                command,
+                capture_output=True,
             )
         except Exception as exc:
+            if hasattr(exc, "stdout") or hasattr(exc, "stderr"):
+                print_failure_summary(
+                    "lint",
+                    stdout=getattr(exc, "stdout", None),
+                    stderr=getattr(exc, "stderr", None),
+                    command=command,
+                )
+            print_error(f"[lint] Failed on {relative}")
             raise RuntimeError(f"cppcheck failed for '{relative}'.") from exc
         elapsed = time.perf_counter() - file_start
-        print(f"[lint] Completed {relative} in {elapsed:.2f}s")
+        print_success(f"[lint] Completed {relative} in {format_duration(elapsed)}")
 
     total_elapsed = time.perf_counter() - total_start
-    print(f"[lint] Static analysis completed successfully in {total_elapsed:.2f}s.")
+    print_summary(f"[lint] Static analysis completed successfully in {format_duration(total_elapsed)}.")
     return 0
 
 
