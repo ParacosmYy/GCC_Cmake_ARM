@@ -35,7 +35,7 @@ py -3 Scripts/ci/main.py flash
 
 - 标准入口：`Scripts/ci/main.py`
 - 开发者快捷层：`just ...`
-- Git Hook：`lefthook`
+- Hook 管理：`lefthook`
 - IDE 便利层：VS Code Task
 
 注意：
