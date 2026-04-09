@@ -100,6 +100,8 @@ build.ninja
 *.swp
 *.swo
 
+# Local CI installer runtime state
+
 # 操作系统文件
 .DS_Store
 Thumbs.db
