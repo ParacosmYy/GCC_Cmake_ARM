@@ -3,7 +3,16 @@ from __future__ import annotations
 import argparse
 from collections.abc import Sequence
 
-from common import artifact_path, flash_config_value, resolve_openocd_config, resolve_tool_path, run_command
+from common import (
+    artifact_path,
+    flash_config_value,
+    print_info,
+    print_section,
+    print_summary,
+    resolve_openocd_config,
+    resolve_tool_path,
+    run_command,
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -34,7 +43,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     # file paths must be normalized or they will be consumed as escapes.
     elf_for_openocd = elf.resolve().as_posix()
 
-    print(f"[flash] Flashing {elf}")
+    print_section(f"flash :: {preset}")
+    print_info(f"[flash] Flashing {elf}")
     run_command(
         [
             openocd,
@@ -46,7 +56,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"program {{{elf_for_openocd}}} verify reset exit",
         ]
     )
-    print("[flash] Flash completed successfully.")
+    print_summary("[flash] Flash completed successfully.")
     return 0
 
 

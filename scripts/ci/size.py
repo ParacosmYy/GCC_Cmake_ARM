@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from collections.abc import Sequence
 
-from common import size_summary
+from common import print_info, print_section, print_summary, size_summary
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -12,12 +12,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     summary = size_summary(args.preset)
-    print("[size] Raw tool output:")
+    print_section(f"size :: {args.preset}")
+    print_info("[size] Raw tool output:")
     for line in summary["lines"]:
         print(line)
 
     print("")
-    print("[size] Summary:")
+    print_summary("[size] Summary:")
     print(f"  preset : {summary['preset']}")
     print(f"  elf    : {summary['elf']}")
     print(f"  text   : {summary['text']} B")
