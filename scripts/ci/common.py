@@ -168,7 +168,7 @@ def read_json_file(path: Path) -> dict[str, Any] | None:
     if not path.is_file():
         return None
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
         raise RuntimeError(f"Invalid JSON in {path}: {exc.msg} (line {exc.lineno}, column {exc.colno})") from exc
     if not isinstance(value, dict):
