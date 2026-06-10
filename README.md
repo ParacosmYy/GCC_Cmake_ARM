@@ -1,116 +1,62 @@
-# STM32 Local CI
+# STM32 Local CI Hook Backup
 
-这套仓库现在只保留一个文档入口，就是这份 `README.md`。
+`backup/hook-local-ci` 是 STM32 本地 CI Hook 方案的备份与参考分支，用于保留历史验证脚本、提交前检查思路和可迁移的工程实践。该分支不建议作为活跃开发主线，稳定方案应沉淀到 `template/stm32-local-ci-extract`。
 
-## 1. 先准备环境
+## 分支定位
 
-团队统一做法是先运行：
+| 项目 | 说明 |
+| --- | --- |
+| 类型 | 本地 CI / Git Hook 备份分支 |
+| 适用对象 | STM32 / Cortex-M 嵌入式工程 |
+| 主要用途 | 保存 Hook 方案、历史脚本、验证思路 |
+| 推荐上游 | `template/stm32-local-ci-extract` |
+| 维护策略 | 只保留有参考价值的方案，不承载长期业务开发 |
 
-```powershell
-powershell -ExecutionPolicy Bypass -File D:\DevEnv\install_env.ps1
+## 适合保留的内容
+
+- `pre-commit` 或提交前验证 Hook 示例。
+- 本地构建、清理、格式检查脚本。
+- 曾经可用但需要整理的 CI 方案。
+- 对后续模板化有价值的检查逻辑。
+- 脚本迁移过程中的对比说明。
+
+不建议长期保留：
+
+- 绑定个人机器路径的脚本。
+- 已经失效且无说明的命令。
+- 与具体业务项目强绑定的检查逻辑。
+- 重复、过期、无法复现的临时代码。
+
+## Hook 设计原则
+
+| 原则 | 说明 |
+| --- | --- |
+| 快速 | 提交前 Hook 应控制耗时，避免影响开发节奏 |
+| 确定 | 同一份代码在同一环境下结果应稳定 |
+| 可跳过 | 紧急场景可手动跳过，但需要后续补验证 |
+| 可迁移 | 脚本不依赖个人绝对路径 |
+| 可解释 | 失败信息能直接指向原因和修复方式 |
+
+## 推荐迁移路径
+
+```text
+backup/hook-local-ci
+    -> 清理无效脚本
+    -> 抽取通用检查项
+    -> 迁移到 template/stm32-local-ci-extract
+    -> 在具体工程中接入 verify 命令
 ```
 
-然后：
+## 验证清单
 
-1. 关闭所有终端和 VS Code
-2. 重新打开 VS Code 或终端
-3. 确认下面这些命令能直接找到
+| 检查项 | 要求 |
+| --- | --- |
+| Hook 可执行性 | 在目标 shell 环境中可运行 |
+| 构建入口 | 能调用统一构建命令 |
+| 错误输出 | 失败原因清晰，不只返回退出码 |
+| 路径配置 | 工具链路径可配置，不写死个人目录 |
+| 迁移说明 | 有价值脚本应说明迁移目标和适用范围 |
 
-```powershell
-cmake --version
-ninja --version
-clangd --version
-clang-format --version
-cppcheck --version
-arm-none-eabi-gcc --version
-arm-none-eabi-gdb --version
-openocd --version
-```
+## 维护边界
 
-再确认：
-
-```powershell
-echo $env:OPENOCD_SCRIPTS
-```
-
-## 2. 快速开始
-
-仓库标准入口固定为：
-
-```powershell
-py -3 Scripts/ci/main.py <subcommand>
-```
-
-最常用的命令只有这些：
-
-```powershell
-py -3 Scripts/ci/main.py init
-py -3 Scripts/ci/main.py build --preset Debug
-py -3 Scripts/ci/main.py check
-py -3 Scripts/ci/main.py check --full
-py -3 Scripts/ci/main.py flash
-```
-
-VS Code 里对应的 Task 只保留：
-
-- `ci: init`
-- `ci: build`
-- `ci: check`
-- `ci: flash`
-
-## 3. clangd / VS Code
-
-当前仓库采用 `PATH` 模式，不再在仓库里写死 `D:\DevEnv\...` 绝对路径。
-
-工作区里只保留最小 VS Code 配置：
-
-- `.vscode/tasks.json`
-- `.vscode/launch.json`
-- `.vscode/settings.json`
-
-其中：
-
-- `clangd.path = clangd`
-- `clangd` 通过 `build/Debug/compile_commands.json` 工作
-- `clangd` 通过 `--query-driver=**/arm-none-eabi-*` 识别 ARM GCC
-- 调试默认使用：
-  - `arm-none-eabi-gdb`
-  - `openocd`
-  - `OPENOCD_SCRIPTS`
-
-如果 `clangd` 没有头文件、跳转或补全，先不要改仓库路径，先确认：
-
-1. `D:\DevEnv\install_env.ps1` 已跑过
-2. VS Code 已重开
-3. `clangd` 和 `arm-none-eabi-gcc` 都能在终端直接执行
-4. `build/Debug/compile_commands.json` 已存在
-
-## 4. G4 / H7 迁移时改什么
-
-迁移本地 CI 时，不要重写 `Scripts/ci`。
-
-通常只需要改项目层内容：
-
-1. `.local-ci/config.json`
-2. `.vscode/launch.json`
-3. `.ioc`
-4. CubeMX 生成层
-5. 启动文件和链接脚本
-
-常见芯片 target：
-
-- H7: `target/stm32h7x.cfg`
-- G4: `target/stm32g4x.cfg`
-
-## 5. Lefthook pre-commit
-
-当前默认只启用 `pre-commit`。
-
-它会做：
-
-- `git diff --cached --check`
-- JSON 校验
-- `Scripts/` 下 Python 语法检查
-- 对 staged 的手写 C/C++ 文件执行 `clang-format`
-
-不默认启用 `pre-push`。
+该分支的价值是“保存与筛选”，不是继续堆叠新方案。后续如果某个 Hook 或脚本被验证为通用能力，应迁移到模板分支；如果只对单一项目有效，应进入对应项目仓库维护。
